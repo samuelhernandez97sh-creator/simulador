@@ -22,12 +22,11 @@
             padding: 20px;
         }
 
-        /* CONTENEDOR PRINCIPAL: Se adapta según la pantalla */
         .container {
             background-color: #151b26;
             border-radius: 16px;
             width: 100%;
-            max-width: 450px; /* Por defecto tamaño móvil */
+            max-width: 450px;
             padding: 24px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -62,7 +61,6 @@
             color: #f59e0b;
         }
 
-        /* ESTRUCTURA DEL CONTENIDO */
         .main-layout {
             display: flex;
             flex-direction: column;
@@ -75,7 +73,6 @@
             gap: 16px;
         }
 
-        /* INPUTS Y COMPONENTES */
         .row-inputs {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -119,6 +116,32 @@
             outline: none;
         }
 
+        /* SELECTOR DE COMISIÓN ESTILO BOTONES */
+        .commission-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .com-btn {
+            background-color: #151b26;
+            color: #a0aec0;
+            border: 1px solid #2d3748;
+            padding: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .com-btn.active {
+            background-color: #3182ce;
+            color: white;
+            border-color: #3182ce;
+        }
+
         .notif-panel {
             background: #1f2736;
             border: 1px solid #2d3748;
@@ -139,7 +162,6 @@
             width: 100%;
         }
 
-        /* TIMELINE DEL ARBITRAJE */
         .timeline {
             display: flex;
             flex-direction: column;
@@ -190,7 +212,6 @@
             margin-top: 2px;
         }
 
-        /* TARJETAS RESUMEN */
         .bank-card {
             background-color: #1a2438;
             border-left: 4px solid #3182ce;
@@ -266,7 +287,6 @@
             color: #10b981;
         }
 
-        /* COMPONENTES LATERALES / SECCIONES DE CONTROL */
         .panel-control, .panel-stats, .panel-chart {
             background: #1f2736;
             padding: 14px;
@@ -281,7 +301,6 @@
             font-weight: 600;
         }
 
-        /* Estilo Nuevo Panel Estadísticas */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -306,7 +325,6 @@
         .stat-val.max { color: #34d399; }
         .stat-val.min { color: #f87171; }
 
-        /* ALERTAS */
         .floating-alert {
             position: fixed;
             top: 20px;
@@ -329,14 +347,13 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* 🖥️ MEDIA QUERY EXCLUSIVA PARA PC / PANTALLAS GRANDES */
         @media (min-width: 850px) {
             .container {
-                max-width: 950px; /* Se expande horizontalmente en PC */
+                max-width: 950px;
             }
             .main-layout {
                 display: grid;
-                grid-template-columns: 1fr 1fr; /* Divide en 2 columnas perfectas */
+                grid-template-columns: 1fr 1fr;
                 gap: 24px;
                 align-items: start;
             }
@@ -345,7 +362,6 @@
 </head>
 <body>
 
-    <!-- Alerta Flotante en Pantalla -->
     <div id="alert-flotante" class="floating-alert">
         🚨 ¡OPORTUNIDAD DETECTADA! 🚨
     </div>
@@ -358,15 +374,12 @@
 
         <div class="main-layout">
             
-            <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN, TASAS Y FLUJO -->
             <div class="column">
-                <!-- Panel de Notificaciones -->
                 <div class="notif-panel">
                     <strong>Campana de Alertas (<span id="txt-meta-notif">Meta: ≥ 12%</span>):</strong>
                     <button id="btn-permiso" class="notif-btn">Activar Notificaciones en Celular/PC</button>
                 </div>
 
-                <!-- Inputs de Tasas -->
                 <div class="row-inputs">
                     <div class="input-group">
                         <label class="input-label">Tasa BCV Oficial</label>
@@ -384,16 +397,23 @@
                     </div>
                 </div>
 
-                <!-- Input de Monto -->
-                <div class="input-group">
-                    <label class="input-label">Monto a comprar</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">$</span>
-                        <input type="number" id="monto-compra" class="input-field" step="1" value="500">
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label class="input-label">Monto a comprar</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="monto-compra" class="input-field" step="1" value="500">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Comisión Tarjeta</label>
+                        <div class="commission-selector">
+                            <button class="com-btn active" data-fee="1.5">1.5%</button>
+                            <button class="com-btn" data-fee="2.5">2.5%</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Flujo Explicativo -->
                 <div class="timeline">
                     <div class="timeline-item">
                         <div class="icon-circle">🏛️</div>
@@ -405,7 +425,7 @@
                     <div class="timeline-item">
                         <div class="icon-circle">💳</div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Recargas con tarjeta <span>-1.5%</span></div>
+                            <div class="timeline-title">Recargas con tarjeta <span id="label-fee-tarjeta">-1.5%</span></div>
                             <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
                         </div>
                     </div>
@@ -425,7 +445,6 @@
                     </div>
                 </div>
 
-                <!-- Monto Banco -->
                 <div class="bank-card">
                     <div>
                         <span class="bank-title">MONTO A TENER EN EL BANCO</span>
@@ -435,9 +454,7 @@
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: RESULTADOS, CONTROLES Y TENDENCIA -->
             <div class="column">
-                <!-- Ganancia Estimada -->
                 <div class="profit-card">
                     <div class="profit-header">
                         <span class="profit-title">📈 Ganancia estimada</span>
@@ -455,7 +472,6 @@
                     </div>
                 </div>
 
-                <!-- Panel de Control Alertas -->
                 <div class="panel-control">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
                         <span style="color: #a0aec0;">Ajustar Meta de Alerta:</span>
@@ -464,7 +480,6 @@
                     <input type="range" id="sliderMeta" min="1" max="25" value="12" style="width: 100%; accent-color: #10b981; cursor: pointer;">
                 </div>
 
-                <!-- NUEVO: Panel de Estadísticas de Sesión -->
                 <div class="panel-stats">
                     <div class="panel-title-sec">Límites de la Sesión Actual</div>
                     <div class="stats-grid">
@@ -479,7 +494,6 @@
                     </div>
                 </div>
 
-                <!-- Panel de la Gráfica -->
                 <div class="panel-chart">
                     <div class="panel-title-sec">Tendencia del Margen Neto (En Vivo)</div>
                     <canvas id="canvasMargen" style="max-height: 140px;"></canvas>
@@ -490,17 +504,19 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE TELEGRAM (OPCIONAL)
-        const TELEGRAM_BOT_TOKEN = 'telegram'; 
-        const TELEGRAM_CHAT_ID = 'telegram';
+        // CONFIGURACIÓN DE URL BASE DE VERCEL PARA EVITAR ERRORES EN REUTAS
+        const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
         
-        // --- VARIABLES GLOBALES ---
+        const TELEGRAM_BOT_TOKEN = ''; 
+        const TELEGRAM_CHAT_ID = '';
+        
         let metaAlertas = 12; 
         let miGrafica = null;
         let historialMargen = JSON.parse(localStorage.getItem('historial_margen_p2p')) || [];
         let ultimaNotificacionTiempo = 0;
         let maxMargenSession = -999;
         let minMargenSession = 999;
+        let comisionTarjetaSeleccionada = 1.5; // Por defecto 1.5%
 
         // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
@@ -512,6 +528,7 @@
         const sliderMeta = document.getElementById('sliderMeta');
         const valMeta = document.getElementById('valMeta');
         const txtMetaNotif = document.getElementById('txt-meta-notif');
+        const labelFeeTarjeta = document.getElementById('label-fee-tarjeta');
 
         const txtPaso1 = document.getElementById('txt-paso1');
         const txtPaso2 = document.getElementById('txt-paso2');
@@ -529,7 +546,6 @@
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        // Manejo del slider nativo en el HTML
         sliderMeta.addEventListener('input', (e) => {
             metaAlertas = parseFloat(e.target.value);
             valMeta.textContent = metaAlertas + '%';
@@ -537,7 +553,17 @@
             calcularSimulacion(); 
         });
 
-        // Activar notificaciones nativas
+        // Eventos para el nuevo selector de comisión
+        document.querySelectorAll('.com-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.com-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                comisionTarjetaSeleccionada = parseFloat(e.target.dataset.fee);
+                labelFeeTarjeta.textContent = `-${comisionTarjetaSeleccionada}%`;
+                calcularSimulacion();
+            });
+        });
+
         btnPermiso.addEventListener('click', () => {
             if (!("Notification" in window)) {
                 alert("Este navegador no soporta notificaciones de escritorio.");
@@ -572,7 +598,7 @@
                         });
                     }
 
-                    if (TELEGRAM_BOT_TOKEN !== 'telegram' && TELEGRAM_BOT_TOKEN !== '') {
+                    if (TELEGRAM_BOT_TOKEN !== '') {
                         const mensaje = `🚨 *¡OPORTUNIDAD DE ARBITRAJE!* 🚨\n\n📈 *Ganancia:* ${formatVE(porcentaje)}%\n🏛️ *BCV:* Bs ${formatVE(bcv)}\n🔗 *P2P Binance:* Bs ${formatVE(p2p)}`;
                         fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
@@ -593,15 +619,18 @@
 
             const tasaConComision = TasaBCV * 1.005;
             const costoTotalBanco = montoUSD * tasaConComision;
-            const montoTarjeta = montoUSD * 0.985;
-            const montoUSDT = montoTarjeta * 0.959;
+            
+            // Aplica dinámicamente la comisión elegida (1.5% o 2.5%)
+            const factorTarjeta = (100 - comisionTarjetaSeleccionada) / 100;
+            const montoTarjeta = montoUSD * factorTarjeta;
+            
+            const montoUSDT = montoTarjeta * 0.959; // Mantiene el -4.1% neto para Binance
             const ventaBolivares = montoUSDT * TasaP2P;
 
             const gananciaBs = ventaBolivares - costoTotalBanco;
             const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
             const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
 
-            // Renderizado
             txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
             txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
             txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
@@ -612,7 +641,6 @@
             txtGananciaBs.textContent = `Bs ${formatVE(gananciaBs)}`;
             txtGananciaUSDT.textContent = `${formatVE(gananciaUSDT)} USDT`;
 
-            // Calcular récords de la sesión
             if (porcentajeGanancia !== 0) {
                 if (porcentajeGanancia > maxMargenSession || maxMargenSession === -999) {
                     maxMargenSession = porcentajeGanancia;
@@ -629,25 +657,22 @@
 
         async function obtenerTasasAPI() {
             try {
-                // 1. LLAMADA A TU NUEVA API EN VERCEL EN LUGAR DE DOLARAPI
-                const resBCV = await fetch('/api/bcv');
+                // Hacemos fetch apuntando de forma absoluta a Vercel para asegurar compatibilidad
+                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
                 const dataBCV = await resBCV.json();
                 
                 if (!dataBCV.success) {
                     throw new Error(dataBCV.error || "Error en la extracción del BCV");
                 }
                 
-                // dataBCV.bcv trae el valor numérico limpio extraído directamente del sitio oficial
                 const tasaBCV = dataBCV.bcv;
                 inputBCV.value = tasaBCV;
 
-                // 2. CÁLCULO DEL FILTRO PARA BINANCE CON TU TASA PROPIA
                 const tasaConComision = tasaBCV * 1.005;
                 const costoTotalBanco = 500 * tasaConComision;
                 const montoBsFiltro = Math.round(costoTotalBanco + 500);
 
-                // 3. CONSULTA A TU API DE BINANCE P2P EN VIVO
-                const resBinanceVivo = await fetch(`https://simulador-dusky-zeta.vercel.app/api/binance-p2p?amount=${montoBsFiltro}`);
+                const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`);
                 const dataBinance = await resBinanceVivo.json();
                 
                 if(dataBinance.precio_binance_p2p) {
@@ -662,7 +687,6 @@
                 badgeEstado.textContent = "Modo Manual (Error Red)";
                 badgeEstado.classList.add('manual');
             } finally {
-                // Ejecuta los cálculos matemáticos corregidos y refresca la gráfica
                 calcularSimulacion();
                 actualizarGraficaTendencia();
             }
