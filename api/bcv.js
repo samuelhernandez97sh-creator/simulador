@@ -1,12 +1,25 @@
 export default async function handler(req, res) {
+  // Destruir la caché a nivel de navegador y CDN de Vercel
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 
-  // Definimos las 4 funciones de obtención de datos
+  // Opciones de fetch para forzar datos frescos en el servidor
+  const fetchOptions = {
+    method: 'GET',
+    cache: 'no-store', // Rompe la caché nativa de la API fetch
+    headers: { 
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    },
+    next: { revalidate: 0 } // Desactiva la caché si Vercel usa Next.js internamente
+  };
+
   const fetchBCV = async () => {
-    const response = await fetch('https://www.bcv.org.ve/glosario/cambio-oficial', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-    });
+    const response = await fetch('https://www.bcv.org.ve/glosario/cambio-oficial', fetchOptions);
     if (!response.ok) throw new Error('BCV no disponible');
     const html = await response.text();
     const match = html.match(/id=["']dolar["'][\s\S]*?([\d,.]+)/i);
@@ -17,7 +30,7 @@ export default async function handler(req, res) {
   };
 
   const fetchExchangeMonitor = async () => {
-    const response = await fetch('https://p2p.exchangemonitor.net/api/v1/ve/dolar');
+    const response = await fetch('https://p2p.exchangemonitor.net/api/v1/ve/dolar', fetchOptions);
     if (!response.ok) throw new Error('ExchangeMonitor no disponible');
     const data = await response.json();
     if (data && data.bcv && data.bcv.precio) {
@@ -27,7 +40,7 @@ export default async function handler(req, res) {
   };
 
   const fetchMonitorVenezuela = async () => {
-    const response = await fetch('https://api.monitordolarvenezuela.com/bcv');
+    const response = await fetch('https://api.monitordolarvenezuela.com/bcv', fetchOptions);
     if (!response.ok) throw new Error('Monitor Venezuela no disponible');
     const data = await response.json();
     if (data && data.bcv && data.bcv.precio) {
@@ -37,7 +50,7 @@ export default async function handler(req, res) {
   };
 
   const fetchDolarApi = async () => {
-    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', fetchOptions);
     if (!response.ok) throw new Error('DolarApi no disponible');
     const data = await response.json();
     if (data && data.promedio) {
@@ -47,7 +60,7 @@ export default async function handler(req, res) {
   };
 
   try {
-    // Promise.allSettled lanza las 4 consultas estrictamente al mismo tiempo
+    // Ejecución simultánea en paralelo
     const resultados = await Promise.allSettled([
       fetchBCV(),
       fetchExchangeMonitor(),
@@ -55,24 +68,22 @@ export default async function handler(req, res) {
       fetchDolarApi()
     ]);
 
-    // Filtramos solo las respuestas que tuvieron éxito
     const exitosos = resultados
       .filter(r => r.status === 'fulfilled')
       .map(r => r.value);
 
     if (exitosos.length === 0) {
-      throw new Error('Ninguna de las 4 fuentes respondió con éxito');
+      throw new Error('Todas las fuentes fallaron o devolvieron datos vacíos');
     }
 
-    // Buscamos la tasa más alta reportada entre las que respondieron en paralelo
-    // Esto asegura que si una fuente ya se actualizó a la tasa nueva y otra sigue en la vieja, gane la nueva.
+    // Buscamos la tasa más alta registrada en tiempo real para evitar quedarnos con datos viejos
     const mejorTasa = exitosos.reduce((max, actual) => actual.bcv > max.bcv ? actual : max, exitosos[0]);
 
     return res.status(200).json({
       success: true,
       bcv: mejorTasa.bcv,
       source: mejorTasa.source,
-      competidores_activos: exitosos.length
+      fresco: true
     });
 
   } catch (error) {
