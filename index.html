@@ -514,7 +514,7 @@
 
         // 2. Buscamos tu P2P FILTRADO Y EN VIVO desde tu nuevo servidor de Vercel
         // ¡REEMPLAZA LA URL DE ABAJO POR LA TUYA DE VERCEL!
-        const resBinanceVivo = await fetch('npx plugins add vercel/vercel-plugin');
+        const resBinanceVivo = await fetch('https://simulador-dusky-zeta.vercel.app/api/binance-p2p');
         const dataBinance = await resBinanceVivo.json();
         
         if(dataBinance.precio_binance_p2p) {
