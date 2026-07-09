@@ -505,16 +505,22 @@
             evaluarAlertas(porcentajeGanancia, TasaBCV, TasaP2P);
         }
 
-        async function obtenerTasasAPI() {
+       async function obtenerTasasAPI() {
     try {
         // 1. Buscamos el BCV oficial en la DolarApi tradicional
         const resBCV = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const dataBCV = await resBCV.json();
-        inputBCV.value = dataBCV.promedio;
+        const tasaBCV = dataBCV.promedio;
+        inputBCV.value = tasaBCV;
 
-        // 2. Buscamos tu P2P FILTRADO Y EN VIVO desde tu nuevo servidor de Vercel
-        // ¡REEMPLAZA LA URL DE ABAJO POR LA TUYA DE VERCEL!
-        const resBinanceVivo = await fetch('https://simulador-dusky-zeta.vercel.app/api/binance-p2p');
+        // TU LÓGICA EXACTA DE TRADING:
+        // Calculamos el costo total del banco ($500 * (BCV + 0.5%)) y le sumamos los 500 Bs de colchón
+        const tasaConComision = tasaBCV * 1.005;
+        const costoTotalBanco = 500 * tasaConComision;
+        const montoBsFiltro = Math.round(costoTotalBanco + 500);
+
+        // 2. Buscamos tu P2P pasándole el filtro exacto calculado en tiempo real
+        const resBinanceVivo = await fetch(`https://simulador-dusky-zeta.vercel.app/api/binance-p2p?amount=${montoBsFiltro}`);
         const dataBinance = await resBinanceVivo.json();
         
         if(dataBinance.precio_binance_p2p) {
