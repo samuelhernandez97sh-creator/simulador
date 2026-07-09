@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Arbitraje</title>
+    <title>Simulador de Arbitraje Pro</title>
     <style>
         * {
             box-sizing: border-box;
@@ -29,6 +29,7 @@
             max-width: 450px;
             padding: 24px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
         .header {
@@ -50,12 +51,32 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: bold;
-            transition: all 0.3s ease;
         }
 
         .badge.manual {
             background-color: rgba(245, 158, 11, 0.1);
             color: #f59e0b;
+        }
+
+        /* Configuración de Notificaciones en la UI */
+        .notif-panel {
+            background: #1f2736;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+        .notif-btn {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 6px;
+            width: 100%;
         }
 
         .row-inputs {
@@ -106,13 +127,6 @@
             outline: none;
         }
 
-        /* Eliminar flechas de inputs numéricos */
-        .input-field::-webkit-outer-spin-button,
-        .input-field::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
         .timeline {
             display: flex;
             flex-direction: column;
@@ -138,7 +152,6 @@
             align-items: center;
             font-size: 16px;
             color: #a0aec0;
-            flex-shrink: 0;
         }
 
         .timeline-content {
@@ -164,7 +177,6 @@
         .timeline-value {
             font-size: 14px;
             font-weight: 500;
-            color: #ffffff;
         }
 
         .bank-card {
@@ -178,16 +190,10 @@
             margin-bottom: 20px;
         }
 
-        .bank-info {
-            display: flex;
-            flex-direction: column;
-        }
-
         .bank-title {
             font-size: 11px;
             font-weight: bold;
             color: #4299e1;
-            letter-spacing: 0.5px;
         }
 
         .bank-subtitle {
@@ -248,14 +254,48 @@
             font-weight: bold;
             color: #10b981;
         }
+
+        /* Alerta Flotante en Pantalla */
+        .floating-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-150%);
+            background-color: #e53e3e;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-weight: bold;
+            text-align: center;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .floating-alert.show {
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body>
+
+    <!-- Alerta Flotante en Web -->
+    <div id="alert-flotante" class="floating-alert">
+        🚨 ¡OPORTUNIDAD DETECTADA! Ganancia superior al 12% 🚨
+    </div>
 
     <div class="container">
         <div class="header">
             <h1>Simulador</h1>
             <span id="status-badge" class="badge">Modo Auto</span>
+        </div>
+
+        <!-- Panel de Notificaciones -->
+        <div class="notif-panel">
+            <strong>Campana de Alertas (Meta: ≥ 12%):</strong>
+            <button id="btn-permiso" class="notif-btn">Activar Notificaciones en Celular/PC</button>
         </div>
 
         <!-- Inputs de Tasas -->
@@ -285,7 +325,7 @@
             </div>
         </div>
 
-        <!-- Línea de flujo/Timeline -->
+        <!-- Flujo -->
         <div class="timeline">
             <div class="timeline-item">
                 <div class="icon-circle">🏛️</div>
@@ -294,7 +334,6 @@
                     <div class="timeline-value" id="txt-paso1">$0,00 × Bs 0,00 = Bs 0,00</div>
                 </div>
             </div>
-
             <div class="timeline-item">
                 <div class="icon-circle">💳</div>
                 <div class="timeline-content">
@@ -302,7 +341,6 @@
                     <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
                 </div>
             </div>
-
             <div class="timeline-item">
                 <div class="icon-circle">🔄</div>
                 <div class="timeline-content">
@@ -310,7 +348,6 @@
                     <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
                 </div>
             </div>
-
             <div class="timeline-item">
                 <div class="icon-circle">🔗</div>
                 <div class="timeline-content">
@@ -322,9 +359,9 @@
 
         <!-- Monto Banco -->
         <div class="bank-card">
-            <div class="bank-info">
+            <div>
                 <span class="bank-title">MONTO A TENER EN EL BANCO</span>
-                <span class="bank-subtitle">Costo total de la compra BCV (+0.5%)</span>
+                <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
             </div>
             <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
         </div>
@@ -349,11 +386,22 @@
     </div>
 
     <script>
-        // Elementos de la Interfaz
+        // =========================================================================
+        // CONFIGURACIÓN DE TELEGRAM (OPCIONAL)
+        // Si tienes un Bot de Telegram, pon tus datos aquí para recibir los mensajes
+        // =========================================================================
+        const TELEGRAM_BOT_TOKEN = 'TU_BOT_TOKEN_AQUÍ'; 
+        const TELEGRAM_CHAT_ID = 'TU_CHAT_ID_AQUÍ';
+        
+        let ultimaNotificacionTiempo = 0; // Evita que sature enviando alertas seguidas
+
+        // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
         const inputP2P = document.getElementById('tasa-p2p');
         const inputMonto = document.getElementById('monto-compra');
         const badgeEstado = document.getElementById('status-badge');
+        const btnPermiso = document.getElementById('btn-permiso');
+        const alertFlotante = document.getElementById('alert-flotante');
 
         const txtPaso1 = document.getElementById('txt-paso1');
         const txtPaso2 = document.getElementById('txt-paso2');
@@ -364,65 +412,111 @@
         const txtGananciaBs = document.getElementById('txt-ganancia-bs');
         const txtGananciaUSDT = document.getElementById('txt-ganancia-usdt');
 
-        // Formateador de números estilo Venezuela (Puntos para miles, comas para decimales)
         function formatVE(valor, decimales = 2) {
-            return valor.toLocaleString('es-VE', {
-                minimumFractionDigits: decimales,
-                maximumFractionDigits: decimales
-            });
+            return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        // Lógica Matemática Exacta del Simulador
+        // Solicitar permisos para notificaciones del sistema
+        btnPermiso.addEventListener('click', () => {
+            if (!("Notification" in window)) {
+                alert("Este navegador no soporta notificaciones de escritorio.");
+                return;
+            }
+            Notification.requestPermission().then(permiso => {
+                if (permiso === "granted") {
+                    btnPermiso.textContent = "🔔 ¡Alertas del Sistema Activas!";
+                    btnPermiso.style.backgroundColor = "#10b981";
+                }
+            });
+        });
+
+        if (window.Notification && Notification.permission === "granted") {
+            btnPermiso.textContent = "🔔 ¡Alertas del Sistema Activas!";
+            btnPermiso.style.backgroundColor = "#10b981";
+        }
+
+        // Verificar margen y disparar alarmas
+        function evaluarAlertas(porcentaje, bcv, p2p) {
+            if (porcentaje >= 12) {
+                // 1. Mostrar banner flotante en la web
+                alertFlotante.innerHTML = `🚨 ¡GANANCIA PERFECTA DETECTADA! 🚨<br>Margen actual: ${formatVE(porcentaje)}%<br>P2P: Bs ${formatVE(p2p)}`;
+                alertFlotante.classList.add('show');
+
+                // Limitar alarmas repetitivas a una cada 10 minutos para no saturar
+                const ahora = Date.now();
+                if (ahora - ultimaNotificacionTiempo > 10 * 60 * 1000) {
+                    ultimaNotificacionTiempo = ahora;
+
+                    // 2. Disparar Notificación del Navegador (Suena y flota en Android/PC)
+                    if (window.Notification && Notification.permission === "granted") {
+                        new Notification("🚨 ¡Arbitraje Ideal (>= 12%)!", {
+                            body: `Ganancia: ${formatVE(porcentaje)}% | BCV: ${bcv} | P2P: ${p2p}`,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/281/281757.png'
+                        });
+                    }
+
+                    // 3. Enviar a Telegram (Si se configuró el Token)
+                    if (TELEGRAM_BOT_TOKEN !== 'TU_BOT_TOKEN_AQUÍ') {
+                        const mensaje = `🚨 *¡OPORTUNIDAD DE ARBITRAJE!* 🚨\n\n📈 *Ganancia:* ${formatVE(porcentaje)}%\n🏛️ *BCV:* Bs ${formatVE(bcv)}\n🔗 *P2P Binance:* Bs ${formatVE(p2p)}`;
+                        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: TELEGRAM_CHAT_ID,
+                                text: mensaje,
+                                parse_mode: 'Markdown'
+                            })
+                        }).catch(e => console.error("Error enviando a Telegram", e));
+                    }
+                }
+            } else {
+                // Ocultar banner si baja del 12%
+                alertFlotante.classList.remove('show');
+            }
+        }
+
         function calcularSimulacion() {
-            const tasaBCV = parseFloat(inputBCV.value) || 0;
-            const tasaP2P = parseFloat(inputP2P.value) || 0;
+            const TasaBCV = parseFloat(inputBCV.value) || 0;
+            const TasaP2P = parseFloat(inputP2P.value) || 0;
             const montoUSD = parseFloat(inputMonto.value) || 0;
 
-            // 1. Compras USD a BCV + 0.5%
-            const tasaConComision = tasaBCV * 1.005;
+            const tasaConComision = TasaBCV * 1.005;
             const costoTotalBanco = montoUSD * tasaConComision;
-
-            // 2. Recargas con tarjeta -1.5%
             const montoTarjeta = montoUSD * 0.985;
-
-            // 3. Binance descuenta comisión -4.1%
             const montoUSDT = montoTarjeta * 0.959;
+            const ventaBolivares = montoUSDT * TasaP2P;
 
-            // 4. Venta P2P Binance
-            const ventaBolivares = montoUSDT * tasaP2P;
-
-            // Ganancias
             const gananciaBs = ventaBolivares - costoTotalBanco;
             const gananciaUSDT = tasaConComision > 0 ? (gananciaBs / tasaConComision) : 0;
             const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
 
-            // Renderizar textos en pantalla con formato correcto
+            // Renderizado de datos
             txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
             txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
             txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
-            txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(tasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
+            txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(TasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
             
             txtMontoBanco.textContent = `Bs ${formatVE(costoTotalBanco)}`;
             txtGananciaPct.textContent = `${porcentajeGanancia >= 0 ? '+' : ''}${formatVE(porcentajeGanancia)}%`;
             txtGananciaBs.textContent = `Bs ${formatVE(gananciaBs)}`;
             txtGananciaUSDT.textContent = `${formatVE(gananciaUSDT)} USDT`;
+
+            // Ejecutar el detector de alertas
+            evaluarAlertas(porcentajeGanancia, TasaBCV, TasaP2P);
         }
 
-        // Obtener tasas automáticamente con control de fallos (CORS Seguro)
         async function obtenerTasasAPI() {
             try {
-                // Consultamos DolarApi (Es abierta, ultra rápida y sin bloqueos CORS en GitHub Pages)
                 const [resBCV, resParalelo] = await Promise.all([
                     fetch('https://ve.dolarapi.com/v1/dolares/oficial'),
                     fetch('https://ve.dolarapi.com/v1/dolares/paralelo')
                 ]);
 
-                if (!resBCV.ok || !resParalelo.ok) throw new Error("Error en respuesta");
+                if (!resBCV.ok || !resParalelo.ok) throw new Error("Error de API");
 
                 const dataBCV = await resBCV.json();
                 const dataParalelo = await resParalelo.json();
 
-                // Insertamos los valores directo de los servidores oficiales
                 inputBCV.value = dataBCV.promedio;
                 inputP2P.value = dataParalelo.promedio;
 
@@ -430,11 +524,7 @@
                 badgeEstado.classList.remove('manual');
                 
             } catch (error) {
-                console.warn("Fallo la carga automática, usando valores por defecto manuales.", error);
-                // Valores de respaldo basados en tus capturas por si la red falla
-                inputBCV.value = 700.22;
-                inputP2P.value = 822.71;
-                
+                console.warn("Usando tasas manuales por falla de red temporal.", error);
                 badgeEstado.textContent = "Modo Manual";
                 badgeEstado.classList.add('manual');
             } finally {
@@ -442,7 +532,7 @@
             }
         }
 
-        // Eventos para actualizar en tiempo real si el usuario edita a mano
+        // Escuchadores manuales
         [inputBCV, inputP2P, inputMonto].forEach(input => {
             input.addEventListener('input', () => {
                 badgeEstado.textContent = "Modo Manual";
@@ -451,8 +541,13 @@
             });
         });
 
-        // Inicializar al cargar el documento de GitHub
-        document.addEventListener('DOMContentLoaded', obtenerTasasAPI);
+        // Cargar al inicio
+        document.addEventListener('DOMContentLoaded', () => {
+            obtenerTasasAPI();
+            
+            // AUTOMATIZACIÓN: Volver a consultar las APIs cada 5 minutos de forma silenciosa
+            setInterval(obtenerTasasAPI, 5 * 60 * 1000); 
+        });
     </script>
 </body>
 </html>
