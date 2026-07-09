@@ -505,21 +505,36 @@
             evaluarAlertas(porcentajeGanancia, TasaBCV, TasaP2P);
         }
 
-       async function obtenerTasasAPI() {
+       // --- VARIABLES GLOBALES ---
+let metaAlertas = 12; // Meta inicial (12%)
+let miGrafica = null;
+let historialMargen = JSON.parse(localStorage.getItem('historial_margen_p2p')) || [];
+
+// Sobrescribimos de forma dinámica tu detector de alertas para que use la meta del slider
+window.evaluarAlertas = function(porcentaje, bcv, p2p) {
+    if (typeof alertFlotante !== 'undefined') {
+        if (porcentaje >= metaAlertas) {
+            alertFlotante.classList.add('show');
+        } else {
+            alertFlotante.classList.remove('show');
+        }
+    }
+};
+
+async function obtenerTasasAPI() {
     try {
-        // 1. Buscamos el BCV oficial en la DolarApi tradicional
+        // 1. Buscamos el BCV oficial
         const resBCV = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const dataBCV = await resBCV.json();
         const tasaBCV = dataBCV.promedio;
         inputBCV.value = tasaBCV;
 
-        // TU LÓGICA EXACTA DE TRADING:
-        // Calculamos el costo total del banco ($500 * (BCV + 0.5%)) y le sumamos los 500 Bs de colchón
+        // Calculamos tu filtro automático con el colchón de 500Bs
         const tasaConComision = tasaBCV * 1.005;
         const costoTotalBanco = 500 * tasaConComision;
         const montoBsFiltro = Math.round(costoTotalBanco + 500);
 
-        // 2. Buscamos tu P2P pasándole el filtro exacto calculado en tiempo real
+        // 2. Buscamos el P2P pasándole tu filtro diario automatizado
         const resBinanceVivo = await fetch(`https://simulador-dusky-zeta.vercel.app/api/binance-p2p?amount=${montoBsFiltro}`);
         const dataBinance = await resBinanceVivo.json();
         
@@ -532,30 +547,129 @@
         }
         
     } catch (error) {
-        console.warn("Fallo el flujo en vivo, usando tasas de respaldo de emergencia", error);
+        console.warn("Fallo el flujo en vivo", error);
         badgeEstado.textContent = "Modo Manual (Error Red)";
         badgeEstado.classList.add('manual');
     } finally {
+        // Ejecutamos los cálculos de ganancia al precio Binance
         calcularSimulacion();
+        // Inicializamos e imprimimos la gráfica de tendencia
+        actualizarGraficaTendencia();
     }
 }
 
-        // Escuchadores manuales
-        [inputBCV, inputP2P, inputMonto].forEach(input => {
-            input.addEventListener('input', () => {
-                badgeEstado.textContent = "Modo Manual";
-                badgeEstado.classList.add('manual');
-                calcularSimulacion();
-            });
-        });
+// --- FUNCIÓN 1 y 4: INYECTAR SLIDER Y GRÁFICA EN EL DOM ---
+function actualizarGraficaTendencia() {
+    const margenActual = parseFloat(document.getElementById('txtGananciaPct').textContent.replace('%', ''));
+    if (isNaN(margenActual)) return;
 
-        // Cargar al inicio
-        document.addEventListener('DOMContentLoaded', () => {
-            obtenerTasasAPI();
-            
-            // AUTOMATIZACIÓN: Volver a consultar las APIs cada 5 minutos de forma silenciosa
-            setInterval(obtenerTasasAPI, 60 * 1000); 
+    const ahora = new Date();
+    const horaTexto = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
+
+    // Guardamos el punto actual en el historial
+    historialMargen.push({ hora: horaTexto, margen: margenActual });
+
+    // Mantener solo los últimos 15 minutos en pantalla para que no se sature
+    if (historialMargen.length > 15) {
+        historialMargen.shift();
+    }
+
+    localStorage.setItem('historial_margen_p2p', JSON.stringify(historialMargen));
+
+    // Si la librería de gráficos no se ha cargado, la traemos de forma segura
+    if (typeof Chart === 'undefined') {
+        const scriptChart = document.createElement('script');
+        scriptChart.src = "https://cdn.jsdelivr.net/npm/chart.js";
+        scriptChart.onload = () => inicializarControlesYGrafica();
+        document.head.appendChild(scriptChart);
+    } else {
+        inicializarControlesYGrafica();
+    }
+}
+
+function inicializarControlesYGrafica() {
+    let canvas = document.getElementById('canvasMargen');
+    
+    if (!canvas) {
+        // Localizamos la tarjeta del simulador para meter el panel de control abajo
+        const simuladorCard = document.querySelector('.simulador').closest('div');
+        const contenedorControles = document.createElement('div');
+        contenedorControles.style = "margin-top: 20px; background: #151d2a; padding: 15px; border-radius: 8px; border: 1px solid #232d3f;";
+        
+        // Estructura HTML del Slider y el espacio de la gráfica
+        contenedorControles.innerHTML = `
+            <div style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; font-family: sans-serif;">
+                <div style="display: flex; justify-content: space-between; color: #fff; font-size: 13px;">
+                    <span style="color: #8a99ad;">Ajustar Meta de Alerta:</span>
+                    <span id="valMeta" style="color: #00c896; font-weight: bold;">12%</span>
+                </div>
+                <input type="range" id="sliderMeta" min="1" max="25" value="12" style="width: 100%; accent-color: #00c896; cursor: pointer;">
+            </div>
+            <hr style="border: 0; border-top: 1px solid #232d3f; margin: 12px 0;">
+            <h4 style="color:#fff; margin: 0 0 10px 0; font-size: 13px; font-family: sans-serif;">Tendencia del Margen Neto (En Vivo)</h4>
+            <canvas id='canvasMargen' style='max-height: 160px;'></canvas>
+        `;
+        simuladorCard.appendChild(contenedorControles);
+        
+        // Escuchador del Slider en tiempo real
+        document.getElementById('sliderMeta').addEventListener('input', (e) => {
+            metaAlertas = parseFloat(e.target.value);
+            document.getElementById('valMeta').textContent = metaAlertas + '%';
+            calcularSimulacion(); // Forzar al sistema a evaluar la alarma con la nueva meta
         });
-    </script>
+        
+        canvas = document.getElementById('canvasMargen');
+    }
+
+    const labels = historialMargen.map(item => item.hora);
+    const datos = historialMargen.map(item => item.margen);
+
+    if (miGrafica) {
+        miGrafica.data.labels = labels;
+        miGrafica.data.datasets[0].data = datos;
+        miGrafica.update();
+    } else {
+        // Configuración visual estilo TradingView para el gráfico de líneas
+        miGrafica = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Margen %',
+                    data: datos,
+                    borderColor: '#00c896',
+                    backgroundColor: 'rgba(0, 200, 150, 0.08)',
+                    borderWidth: 2,
+                    tension: 0.25,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#8a99ad', font: { size: 10 } }, grid: { color: '#232d3f' } },
+                    y: { ticks: { color: '#8a99ad', font: { size: 10 } }, grid: { color: '#232d3f' } }
+                }
+            }
+        });
+    }
+}
+
+// Carga inicial y temporizador repetitivo cada 60 segundos
+document.addEventListener('DOMContentLoaded', () => {
+    obtenerTasasAPI();
+    setInterval(obtenerTasasAPI, 60 * 1000);
+});
+
+// Escuchadores manuales por si editas inputs directamente
+[inputBCV, inputP2P, inputMonto].forEach(input => {
+    input.addEventListener('input', () => {
+        badgeEstado.textContent = "Modo Manual";
+        badgeEstado.classList.add('manual');
+        calcularSimulacion();
+    });
+});
+</script>
 </body>
 </html>
