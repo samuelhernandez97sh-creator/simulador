@@ -390,8 +390,8 @@
         // CONFIGURACIÓN DE TELEGRAM (OPCIONAL)
         // Si tienes un Bot de Telegram, pon tus datos aquí para recibir los mensajes
         // =========================================================================
-        const TELEGRAM_BOT_TOKEN = '8946597702:AAEzSTw_-rNIWEyUtISWAxrcumqdwbylKWI'; 
-        const TELEGRAM_CHAT_ID = '304678344';
+        const TELEGRAM_BOT_TOKEN = 'telegram'; 
+        const TELEGRAM_CHAT_ID = 'telegram';
         
         let ultimaNotificacionTiempo = 0; // Evita que sature enviando alertas seguidas
 
@@ -506,31 +506,33 @@
         }
 
         async function obtenerTasasAPI() {
-            try {
-                const [resBCV, resParalelo] = await Promise.all([
-                    fetch('https://ve.dolarapi.com/v1/dolares/oficial'),
-                    fetch('https://ve.dolarapi.com/v1/dolares/paralelo')
-                ]);
+    try {
+        // 1. Buscamos el BCV oficial en la DolarApi tradicional
+        const resBCV = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        const dataBCV = await resBCV.json();
+        inputBCV.value = dataBCV.promedio;
 
-                if (!resBCV.ok || !resParalelo.ok) throw new Error("Error de API");
-
-                const dataBCV = await resBCV.json();
-                const dataParalelo = await resParalelo.json();
-
-                inputBCV.value = dataBCV.promedio;
-                inputP2P.value = dataParalelo.promedio;
-
-                badgeEstado.textContent = "Modo Auto";
-                badgeEstado.classList.remove('manual');
-                
-            } catch (error) {
-                console.warn("Usando tasas manuales por falla de red temporal.", error);
-                badgeEstado.textContent = "Modo Manual";
-                badgeEstado.classList.add('manual');
-            } finally {
-                calcularSimulacion();
-            }
+        // 2. Buscamos tu P2P FILTRADO Y EN VIVO desde tu nuevo servidor de Vercel
+        // ¡REEMPLAZA LA URL DE ABAJO POR LA TUYA DE VERCEL!
+        const resBinanceVivo = await fetch('npx plugins add vercel/vercel-plugin');
+        const dataBinance = await resBinanceVivo.json();
+        
+        if(dataBinance.precio_binance_p2p) {
+            inputP2P.value = dataBinance.precio_binance_p2p;
+            badgeEstado.textContent = "Modo Auto (P2P En Vivo)";
+            badgeEstado.classList.remove('manual');
+        } else {
+            throw new Error("Datos de Binance vacíos");
         }
+        
+    } catch (error) {
+        console.warn("Fallo el flujo en vivo, usando tasas de respaldo de emergencia", error);
+        badgeEstado.textContent = "Modo Manual (Error Red)";
+        badgeEstado.classList.add('manual');
+    } finally {
+        calcularSimulacion();
+    }
+}
 
         // Escuchadores manuales
         [inputBCV, inputP2P, inputMonto].forEach(input => {
