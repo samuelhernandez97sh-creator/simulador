@@ -487,7 +487,7 @@
             const ventaBolivares = montoUSDT * TasaP2P;
 
             const gananciaBs = ventaBolivares - costoTotalBanco;
-            const gananciaUSDT = tasaConComision > 0 ? (gananciaBs / tasaConComision) : 0;
+            const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
             const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
 
             // Renderizado de datos
@@ -548,7 +548,7 @@
             obtenerTasasAPI();
             
             // AUTOMATIZACIÓN: Volver a consultar las APIs cada 5 minutos de forma silenciosa
-            setInterval(obtenerTasasAPI, 5 * 60 * 1000); 
+            setInterval(obtenerTasasAPI, 60 * 1000); 
         });
     </script>
 </body>
