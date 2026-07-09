@@ -629,15 +629,24 @@
 
         async function obtenerTasasAPI() {
             try {
-                const resBCV = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                // 1. LLAMADA A TU NUEVA API EN VERCEL EN LUGAR DE DOLARAPI
+                const resBCV = await fetch('/api/bcv');
                 const dataBCV = await resBCV.json();
-                const tasaBCV = dataBCV.promedio;
+                
+                if (!dataBCV.success) {
+                    throw new Error(dataBCV.error || "Error en la extracción del BCV");
+                }
+                
+                // dataBCV.bcv trae el valor numérico limpio extraído directamente del sitio oficial
+                const tasaBCV = dataBCV.bcv;
                 inputBCV.value = tasaBCV;
 
+                // 2. CÁLCULO DEL FILTRO PARA BINANCE CON TU TASA PROPIA
                 const tasaConComision = tasaBCV * 1.005;
                 const costoTotalBanco = 500 * tasaConComision;
                 const montoBsFiltro = Math.round(costoTotalBanco + 500);
 
+                // 3. CONSULTA A TU API DE BINANCE P2P EN VIVO
                 const resBinanceVivo = await fetch(`https://simulador-dusky-zeta.vercel.app/api/binance-p2p?amount=${montoBsFiltro}`);
                 const dataBinance = await resBinanceVivo.json();
                 
@@ -646,13 +655,14 @@
                     badgeEstado.textContent = "Modo Auto (P2P En Vivo)";
                     badgeEstado.classList.remove('manual');
                 } else {
-                    throw new Error("Datos vacíos");
+                    throw new Error("Datos vacíos de Binance");
                 }
             } catch (error) {
-                console.warn("Usando tasas manuales", error);
+                console.warn("Usando tasas manuales debido a un error:", error);
                 badgeEstado.textContent = "Modo Manual (Error Red)";
                 badgeEstado.classList.add('manual');
             } finally {
+                // Ejecuta los cálculos matemáticos corregidos y refresca la gráfica
                 calcularSimulacion();
                 actualizarGraficaTendencia();
             }
