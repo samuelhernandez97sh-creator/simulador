@@ -3,203 +3,456 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Arbitraje - Astra</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Simulador de Arbitraje</title>
     <style>
-        body { background-color: #0b0f17; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f17;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #151b26;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 450px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .badge {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .badge.manual {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .row-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            background-color: #1f2736;
+            border-radius: 8px;
+            padding: 10px 14px;
+            border: 1px solid #2d3748;
+        }
+
+        .input-group.full-width {
+            margin-bottom: 24px;
+        }
+
+        .input-label {
+            font-size: 11px;
+            color: #a0aec0;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-prefix {
+            font-size: 14px;
+            color: #718096;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+
+        .input-field {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            text-align: right;
+            outline: none;
+        }
+
+        /* Eliminar flechas de inputs numéricos */
+        .input-field::-webkit-outer-spin-button,
+        .input-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            padding-left: 12px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .icon-circle {
+            width: 36px;
+            height: 36px;
+            background-color: #1f2736;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            color: #a0aec0;
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-title {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-bottom: 2px;
+        }
+
+        .timeline-title span {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 6px;
+        }
+
+        .timeline-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .bank-card {
+            background-color: #1a2438;
+            border-left: 4px solid #3182ce;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .bank-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bank-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #4299e1;
+            letter-spacing: 0.5px;
+        }
+
+        .bank-subtitle {
+            font-size: 10px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .bank-amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4299e1;
+        }
+
+        .profit-card {
+            background-color: #142421;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+
+        .profit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .profit-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .profit-pct {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .profit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .profit-sub-title {
+            font-size: 11px;
+            color: #718096;
+            margin-bottom: 2px;
+        }
+
+        .profit-sub-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #10b981;
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen text-gray-200 font-sans p-4">
+<body>
 
-    <div class="w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-2xl">
-        
-        <div class="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-gray-800 p-2 rounded-lg text-gray-400">
-                    <i class="fa-solid fa-right-left-arrow-right text-lg"></i>
-                </div>
-                <h1 class="text-xl font-bold tracking-wide">Simulador</h1>
-            </div>
-            <span class="text-[11px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md font-medium flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Modo Manual
-            </span>
+    <div class="container">
+        <div class="header">
+            <h1>Simulador</h1>
+            <span id="status-badge" class="badge">Modo Auto</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="bg-[#1f2937] p-3 rounded-xl border border-gray-700">
-                <label for="tasa-bcv" class="text-xs font-medium text-gray-400 block mb-1">Tasa BCV Oficial</label>
-                <div class="flex items-center bg-[#111827] px-2 py-1 rounded-lg border border-gray-600 focus-within:border-emerald-500">
-                    <span class="text-xs text-gray-500 mr-1">Bs</span>
-                    <input type="number" id="tasa-bcv" value="667.05" step="0.00001" class="w-full bg-transparent text-right font-bold text-sm focus:outline-none text-white">
+        <!-- Inputs de Tasas -->
+        <div class="row-inputs">
+            <div class="input-group">
+                <label class="input-label">Tasa BCV Oficial</label>
+                <div class="input-wrapper">
+                    <span class="input-prefix">Bs</span>
+                    <input type="number" id="tasa-bcv" class="input-field" step="0.01" value="0.00">
                 </div>
             </div>
-            <div class="bg-[#1f2937] p-3 rounded-xl border border-gray-700">
-                <label for="tasa-p2p" class="text-xs font-medium text-gray-400 block mb-1">Tasa P2P Binance</label>
-                <div class="flex items-center bg-[#111827] px-2 py-1 rounded-lg border border-gray-600 focus-within:border-emerald-500">
-                    <span class="text-xs text-gray-500 mr-1">Bs</span>
-                    <input type="number" id="tasa-p2p" value="770" step="0.01" class="w-full bg-transparent text-right font-bold text-sm focus:outline-none text-white">
+            <div class="input-group">
+                <label class="input-label">Tasa P2P Binance</label>
+                <div class="input-wrapper">
+                    <span class="input-prefix">Bs</span>
+                    <input type="number" id="tasa-p2p" class="input-field" step="0.01" value="0.00">
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center justify-between bg-[#1f2937] p-4 rounded-xl mb-6 border border-gray-700">
-            <label for="monto" class="text-sm font-medium text-gray-400">Monto a comprar</label>
-            <div class="flex items-center bg-[#111827] px-3 py-1.5 rounded-lg border border-gray-600 focus-within:border-emerald-500">
-                <span class="text-gray-400 mr-1">$</span>
-                <input type="number" id="monto" value="500" class="w-20 bg-transparent text-right font-bold focus:outline-none text-white">
+        <!-- Input de Monto -->
+        <div class="input-group full-width">
+            <label class="input-label">Monto a comprar</label>
+            <div class="input-wrapper">
+                <span class="input-prefix">$</span>
+                <input type="number" id="monto-compra" class="input-field" step="1" value="500">
             </div>
         </div>
 
-        <div class="space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-800">
-            
-            <div class="flex items-start gap-4 relative">
-                <div class="bg-[#1f2937] border border-gray-700 w-10 h-10 rounded-full flex items-center justify-center text-gray-400 z-10">
-                    <i class="fa-solid fa-building-columns text-sm"></i>
-                </div>
-                <div class="flex-1">
-                    <p class="text-xs font-semibold text-gray-400">Compras USD a BCV + 0.5%</p>
-                    <p id="txt-paso1" class="text-sm font-medium text-gray-300 mt-0.5">--</p>
+        <!-- Línea de flujo/Timeline -->
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="icon-circle">🏛️</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">Compras USD a BCV + 0.5%</div>
+                    <div class="timeline-value" id="txt-paso1">$0,00 × Bs 0,00 = Bs 0,00</div>
                 </div>
             </div>
 
-            <div class="flex items-start gap-4 relative">
-                <div class="bg-[#1f2937] border border-gray-700 w-10 h-10 rounded-full flex items-center justify-center text-gray-400 z-10">
-                    <i class="fa-solid fa-credit-card text-sm"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <p class="text-xs font-semibold text-gray-400">Recargas con tarjeta</p>
-                        <span class="bg-amber-500/10 text-amber-500 text-[10px] font-bold px-1.5 py-0.5 rounded">-1.5%</span>
-                    </div>
-                    <p id="txt-paso2" class="text-sm font-medium text-gray-300 mt-0.5">--</p>
+            <div class="timeline-item">
+                <div class="icon-circle">💳</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">Recargas con tarjeta <span>-1.5%</span></div>
+                    <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
                 </div>
             </div>
 
-            <div class="flex items-start gap-4 relative">
-                <div class="bg-[#1f2937] border border-gray-700 w-10 h-10 rounded-full flex items-center justify-center text-gray-400 z-10">
-                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <p class="text-xs font-semibold text-gray-400">Binance descuenta su comisión</p>
-                        <span class="bg-amber-500/10 text-amber-500 text-[10px] font-bold px-1.5 py-0.5 rounded">-4.1%</span>
-                    </div>
-                    <p id="txt-paso3" class="text-sm font-medium text-gray-300 mt-0.5">--</p>
+            <div class="timeline-item">
+                <div class="icon-circle">🔄</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">Binance descuenta su comisión <span>-4.1%</span></div>
+                    <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
                 </div>
             </div>
 
-            <div class="flex items-start gap-4 relative">
-                <div class="bg-[#1f2937] border border-gray-700 w-10 h-10 rounded-full flex items-center justify-center text-gray-400 z-10">
-                    <i class="fa-solid fa-link text-sm"></i>
-                </div>
-                <div class="flex-1">
-                    <p class="text-xs font-semibold text-gray-400">Vendes USDT en P2P (Binance)</p>
-                    <p id="txt-paso4" class="text-sm font-medium text-gray-300 mt-0.5">--</p>
+            <div class="timeline-item">
+                <div class="icon-circle">🔗</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">Vendes USDT en P2P (Binance)</div>
+                    <div class="timeline-value" id="txt-paso4">0,00 USDT × Bs 0,00 = Bs 0,00</div>
                 </div>
             </div>
-
         </div>
 
-        <div class="mt-8 bg-blue-500/10 border border-blue-900/50 rounded-xl p-4 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="bg-blue-500/20 text-blue-400 p-2 rounded-lg">
-                    <i class="fa-solid fa-wallet text-sm"></i>
+        <!-- Monto Banco -->
+        <div class="bank-card">
+            <div class="bank-info">
+                <span class="bank-title">MONTO A TENER EN EL BANCO</span>
+                <span class="bank-subtitle">Costo total de la compra BCV (+0.5%)</span>
+            </div>
+            <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
+        </div>
+
+        <!-- Ganancia Estimada -->
+        <div class="profit-card">
+            <div class="profit-header">
+                <span class="profit-title">📈 Ganancia estimada</span>
+                <span class="profit-pct" id="txt-ganancia-pct">+0.00%</span>
+            </div>
+            <div class="profit-grid">
+                <div>
+                    <div class="profit-sub-title">En bolívares</div>
+                    <div class="profit-sub-value" id="txt-ganancia-bs">Bs 0,00</div>
                 </div>
                 <div>
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Monto a tener en el banco</p>
-                    <p class="text-[10px] text-blue-400 font-medium">Costo total de la compra BCV (+0.5%)</p>
-                </div>
-            </div>
-            <p id="res-banco-requerido" class="text-lg font-black text-blue-400 tracking-tight">Bs 0,00</p>
-        </div>
-
-        <div class="mt-3 bg-[#064e3b]/20 border border-emerald-900/50 rounded-xl p-5 relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2 text-emerald-400 text-sm font-bold">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <span>Ganancia estimada</span>
-                </div>
-                <span id="txt-rendimiento" class="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded-full">+0.00%</span>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <p class="text-xs text-gray-400 flex items-center gap-1 mb-1"><i class="fa-solid fa-money-bill-transfer"></i> En bolívares</p>
-                    <p id="res-bolivares" class="text-xl font-black text-emerald-400 tracking-tight">Bs 0,00</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 flex items-center gap-1 mb-1"><i class="fa-solid fa-link"></i> En USDT</p>
-                    <p id="res-usdt" class="text-xl font-black text-emerald-400 tracking-tight">0.00 USDT</p>
+                    <div class="profit-sub-title">En USDT</div>
+                    <div class="profit-sub-value" id="txt-ganancia-usdt">0,00 USDT</div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // CAMBIO CRUCIAL: Variable corregida del 2.5% (0.025) al 1.5% (0.015)
-        const comisionTarjeta = 0.015; 
-        const comisionBinance = 0.041; 
-
-        const inputMonto = document.getElementById('monto');
-        const inputTasaBCV = document.getElementById('tasa-bcv');
-        const inputTasaP2P = document.getElementById('tasa-p2p');
+        // Elementos de la Interfaz
+        const inputBCV = document.getElementById('tasa-bcv');
+        const inputP2P = document.getElementById('tasa-p2p');
+        const inputMonto = document.getElementById('monto-compra');
+        const badgeEstado = document.getElementById('status-badge');
 
         const txtPaso1 = document.getElementById('txt-paso1');
         const txtPaso2 = document.getElementById('txt-paso2');
         const txtPaso3 = document.getElementById('txt-paso3');
         const txtPaso4 = document.getElementById('txt-paso4');
-        const txtRendimiento = document.getElementById('txt-rendimiento');
-        const resBolivares = document.getElementById('res-bolivares');
-        const resUsdt = document.getElementById('res-usdt');
-        const resBancoRequerido = document.getElementById('res-banco-requerido');
+        const txtMontoBanco = document.getElementById('txt-monto-banco');
+        const txtGananciaPct = document.getElementById('txt-ganancia-pct');
+        const txtGananciaBs = document.getElementById('txt-ganancia-bs');
+        const txtGananciaUSDT = document.getElementById('txt-ganancia-usdt');
 
-        const formNum = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        function calcularArbitraje() {
-            const montoInicial = parseFloat(inputMonto.value) || 0;
-            const bcvOficial = parseFloat(inputTasaBCV.value) || 0;
-            const tasaP2P = parseFloat(inputTasaP2P.value) || 0;
-
-            const tasaBCV_ConComision = bcvOficial * 1.005;
-
-            // Inversión requerida en el banco
-            const totalInversionBolivares = montoInicial * tasaBCV_ConComision;
-
-            // Operación matemática interna ajustada al 1.5%
-            const montoPostTarjeta = montoInicial * (1 - comisionTarjeta);
-            const finalUSDT = montoPostTarjeta * (1 - comisionBinance);
-            const totalRetornoBolivares = finalUSDT * tasaP2P;
-
-            const gananciaBolivares = totalRetornoBolivares - totalInversionBolivares;
-            const gananciaUSDT = gananciaBolivares / tasaBCV_ConComision;
-            const porcentajeRendimiento = totalInversionBolivares > 0 ? (gananciaBolivares / totalInversionBolivares) * 100 : 0;
-
-            // --- ACTUALIZACIÓN DE INTERFAZ ---
-            txtPaso1.innerText = `$${formNum.format(montoInicial)} × Bs ${formNum.format(tasaBCV_ConComision)} = Bs ${formNum.format(totalInversionBolivares)}`;
-            txtPaso2.innerText = `$${formNum.format(montoInicial)} → $${formNum.format(montoPostTarjeta)}`;
-            txtPaso3.innerText = `$${formNum.format(montoPostTarjeta)} → ${formNum.format(finalUSDT)} USDT`;
-            txtPaso4.innerText = `${formNum.format(finalUSDT)} USDT × Bs ${formNum.format(tasaP2P)} = Bs ${formNum.format(totalRetornoBolivares)}`;
-            
-            resBancoRequerido.innerText = `Bs ${formNum.format(totalInversionBolivares)}`;
-
-            if(gananciaBolivares >= 0) {
-                txtRendimiento.className = "bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded-full";
-                txtRendimiento.innerText = `+${porcentajeRendimiento.toFixed(2)}%`;
-            } else {
-                txtRendimiento.className = "bg-red-500/20 text-red-400 text-xs font-bold px-2 py-0.5 rounded-full";
-                txtRendimiento.innerText = `${porcentajeRendimiento.toFixed(2)}%`;
-            }
-
-            resBolivares.innerText = `Bs ${formNum.format(gananciaBolivares)}`;
-            resUsdt.innerText = `${formNum.format(gananciaUSDT)} USDT`;
+        // Formateador de números estilo Venezuela (Puntos para miles, comas para decimales)
+        function formatVE(valor, decimales = 2) {
+            return valor.toLocaleString('es-VE', {
+                minimumFractionDigits: decimales,
+                maximumFractionDigits: decimales
+            });
         }
 
-        inputMonto.addEventListener('input', calcularArbitraje);
-        inputTasaBCV.addEventListener('input', calcularArbitraje);
-        inputTasaP2P.addEventListener('input', calcularArbitraje);
+        // Lógica Matemática Exacta del Simulador
+        function calcularSimulacion() {
+            const tasaBCV = parseFloat(inputBCV.value) || 0;
+            const tasaP2P = parseFloat(inputP2P.value) || 0;
+            const montoUSD = parseFloat(inputMonto.value) || 0;
 
-        calcularArbitraje();
+            // 1. Compras USD a BCV + 0.5%
+            const tasaConComision = tasaBCV * 1.005;
+            const costoTotalBanco = montoUSD * tasaConComision;
+
+            // 2. Recargas con tarjeta -1.5%
+            const montoTarjeta = montoUSD * 0.985;
+
+            // 3. Binance descuenta comisión -4.1%
+            const montoUSDT = montoTarjeta * 0.959;
+
+            // 4. Venta P2P Binance
+            const ventaBolivares = montoUSDT * tasaP2P;
+
+            // Ganancias
+            const gananciaBs = ventaBolivares - costoTotalBanco;
+            const gananciaUSDT = tasaConComision > 0 ? (gananciaBs / tasaConComision) : 0;
+            const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
+
+            // Renderizar textos en pantalla con formato correcto
+            txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
+            txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
+            txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
+            txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(tasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
+            
+            txtMontoBanco.textContent = `Bs ${formatVE(costoTotalBanco)}`;
+            txtGananciaPct.textContent = `${porcentajeGanancia >= 0 ? '+' : ''}${formatVE(porcentajeGanancia)}%`;
+            txtGananciaBs.textContent = `Bs ${formatVE(gananciaBs)}`;
+            txtGananciaUSDT.textContent = `${formatVE(gananciaUSDT)} USDT`;
+        }
+
+        // Obtener tasas automáticamente con control de fallos (CORS Seguro)
+        async function obtenerTasasAPI() {
+            try {
+                // Consultamos DolarApi (Es abierta, ultra rápida y sin bloqueos CORS en GitHub Pages)
+                const [resBCV, resParalelo] = await Promise.all([
+                    fetch('https://ve.dolarapi.com/v1/dolares/oficial'),
+                    fetch('https://ve.dolarapi.com/v1/dolares/paralelo')
+                ]);
+
+                if (!resBCV.ok || !resParalelo.ok) throw new Error("Error en respuesta");
+
+                const dataBCV = await resBCV.json();
+                const dataParalelo = await resParalelo.json();
+
+                // Insertamos los valores directo de los servidores oficiales
+                inputBCV.value = dataBCV.promedio;
+                inputP2P.value = dataParalelo.promedio;
+
+                badgeEstado.textContent = "Modo Auto";
+                badgeEstado.classList.remove('manual');
+                
+            } catch (error) {
+                console.warn("Fallo la carga automática, usando valores por defecto manuales.", error);
+                // Valores de respaldo basados en tus capturas por si la red falla
+                inputBCV.value = 700.22;
+                inputP2P.value = 822.71;
+                
+                badgeEstado.textContent = "Modo Manual";
+                badgeEstado.classList.add('manual');
+            } finally {
+                calcularSimulacion();
+            }
+        }
+
+        // Eventos para actualizar en tiempo real si el usuario edita a mano
+        [inputBCV, inputP2P, inputMonto].forEach(input => {
+            input.addEventListener('input', () => {
+                badgeEstado.textContent = "Modo Manual";
+                badgeEstado.classList.add('manual');
+                calcularSimulacion();
+            });
+        });
+
+        // Inicializar al cargar el documento de GitHub
+        document.addEventListener('DOMContentLoaded', obtenerTasasAPI);
     </script>
 </body>
 </html>
