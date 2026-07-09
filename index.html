@@ -22,14 +22,16 @@
             padding: 20px;
         }
 
+        /* CONTENEDOR PRINCIPAL: Se adapta según la pantalla */
         .container {
             background-color: #151b26;
             border-radius: 16px;
             width: 100%;
-            max-width: 450px;
+            max-width: 450px; /* Por defecto tamaño móvil */
             padding: 24px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             position: relative;
+            transition: max-width 0.3s ease;
         }
 
         .header {
@@ -37,6 +39,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
+            border-bottom: 1px solid #2d3748;
+            padding-bottom: 12px;
         }
 
         .header h1 {
@@ -58,32 +62,24 @@
             color: #f59e0b;
         }
 
-        /* Configuración de Notificaciones en la UI */
-        .notif-panel {
-            background: #1f2736;
-            border: 1px solid #2d3748;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 16px;
-            font-size: 12px;
-        }
-        .notif-btn {
-            background: #3182ce;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 6px;
-            width: 100%;
+        /* ESTRUCTURA DEL CONTENIDO */
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* INPUTS Y COMPONENTES */
         .row-inputs {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 16px;
         }
 
         .input-group {
@@ -91,10 +87,6 @@
             border-radius: 8px;
             padding: 10px 14px;
             border: 1px solid #2d3748;
-        }
-
-        .input-group.full-width {
-            margin-bottom: 24px;
         }
 
         .input-label {
@@ -127,30 +119,49 @@
             outline: none;
         }
 
+        .notif-panel {
+            background: #1f2736;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+        }
+
+        .notif-btn {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        /* TIMELINE DEL ARBITRAJE */
         .timeline {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            margin-bottom: 24px;
-            position: relative;
-            padding-left: 12px;
+            gap: 16px;
+            padding-left: 6px;
         }
 
         .timeline-item {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
         }
 
         .icon-circle {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             background-color: #1f2736;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 16px;
+            font-size: 14px;
             color: #a0aec0;
         }
 
@@ -162,7 +173,6 @@
         .timeline-title {
             font-size: 12px;
             color: #a0aec0;
-            margin-bottom: 2px;
         }
 
         .timeline-title span {
@@ -175,19 +185,20 @@
         }
 
         .timeline-value {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
+            margin-top: 2px;
         }
 
+        /* TARJETAS RESUMEN */
         .bank-card {
             background-color: #1a2438;
             border-left: 4px solid #3182ce;
             border-radius: 8px;
-            padding: 16px;
+            padding: 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
         }
 
         .bank-title {
@@ -203,7 +214,7 @@
         }
 
         .bank-amount {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #4299e1;
         }
@@ -255,7 +266,47 @@
             color: #10b981;
         }
 
-        /* Alerta Flotante en Pantalla */
+        /* COMPONENTES LATERALES / SECCIONES DE CONTROL */
+        .panel-control, .panel-stats, .panel-chart {
+            background: #1f2736;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #2d3748;
+        }
+
+        .panel-title-sec {
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Estilo Nuevo Panel Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+        .stat-box {
+            background: #151b26;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #2d3748;
+        }
+        .stat-label {
+            font-size: 10px;
+            color: #a0aec0;
+            margin-bottom: 2px;
+        }
+        .stat-val {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .stat-val.max { color: #34d399; }
+        .stat-val.min { color: #f87171; }
+
+        /* ALERTAS */
         .floating-alert {
             position: fixed;
             top: 20px;
@@ -277,11 +328,24 @@
         .floating-alert.show {
             transform: translateX(-50%) translateY(0);
         }
+
+        /* 🖥️ MEDIA QUERY EXCLUSIVA PARA PC / PANTALLAS GRANDES */
+        @media (min-width: 850px) {
+            .container {
+                max-width: 950px; /* Se expande horizontalmente en PC */
+            }
+            .main-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Divide en 2 columnas perfectas */
+                gap: 24px;
+                align-items: start;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Alerta Flotante en Web -->
+    <!-- Alerta Flotante en Pantalla -->
     <div id="alert-flotante" class="floating-alert">
         🚨 ¡OPORTUNIDAD DETECTADA! 🚨
     </div>
@@ -292,96 +356,136 @@
             <span id="status-badge" class="badge">Modo Auto</span>
         </div>
 
-        <!-- Panel de Notificaciones -->
-        <div class="notif-panel">
-            <strong>Campana de Alertas (<span id="txt-meta-notif">Meta: ≥ 12%</span>):</strong>
-            <button id="btn-permiso" class="notif-btn">Activar Notificaciones en Celular/PC</button>
-        </div>
+        <div class="main-layout">
+            
+            <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN, TASAS Y FLUJO -->
+            <div class="column">
+                <!-- Panel de Notificaciones -->
+                <div class="notif-panel">
+                    <strong>Campana de Alertas (<span id="txt-meta-notif">Meta: ≥ 12%</span>):</strong>
+                    <button id="btn-permiso" class="notif-btn">Activar Notificaciones en Celular/PC</button>
+                </div>
 
-        <!-- Inputs de Tasas -->
-        <div class="row-inputs">
-            <div class="input-group">
-                <label class="input-label">Tasa BCV Oficial</label>
-                <div class="input-wrapper">
-                    <span class="input-prefix">Bs</span>
-                    <input type="number" id="tasa-bcv" class="input-field" step="0.01" value="0.00">
+                <!-- Inputs de Tasas -->
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label class="input-label">Tasa BCV Oficial</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">Bs</span>
+                            <input type="number" id="tasa-bcv" class="input-field" step="0.01" value="0.00">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Tasa P2P Binance</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">Bs</span>
+                            <input type="number" id="tasa-p2p" class="input-field" step="0.01" value="0.00">
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="input-group">
-                <label class="input-label">Tasa P2P Binance</label>
-                <div class="input-wrapper">
-                    <span class="input-prefix">Bs</span>
-                    <input type="number" id="tasa-p2p" class="input-field" step="0.01" value="0.00">
-                </div>
-            </div>
-        </div>
 
-        <!-- Input de Monto -->
-        <div class="input-group full-width">
-            <label class="input-label">Monto a comprar</label>
-            <div class="input-wrapper">
-                <span class="input-prefix">$</span>
-                <input type="number" id="monto-compra" class="input-field" step="1" value="500">
-            </div>
-        </div>
+                <!-- Input de Monto -->
+                <div class="input-group">
+                    <label class="input-label">Monto a comprar</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="monto-compra" class="input-field" step="1" value="500">
+                    </div>
+                </div>
 
-        <!-- Flujo -->
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="icon-circle">🏛️</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">Compras USD a BCV + 0.5%</div>
-                    <div class="timeline-value" id="txt-paso1">$0,00 × Bs 0,00 = Bs 0,00</div>
+                <!-- Flujo Explicativo -->
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="icon-circle">🏛️</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Compras USD a BCV + 0.5%</div>
+                            <div class="timeline-value" id="txt-paso1">$0,00 × Bs 0,00 = Bs 0,00</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="icon-circle">💳</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Recargas con tarjeta <span>-1.5%</span></div>
+                            <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="icon-circle">🔄</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Binance descuenta su comisión <span>-4.1%</span></div>
+                            <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="icon-circle">🔗</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Vendes USDT en P2P (Binance)</div>
+                            <div class="timeline-value" id="txt-paso4">0,00 USDT × Bs 0,00 = Bs 0,00</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="timeline-item">
-                <div class="icon-circle">💳</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">Recargas con tarjeta <span>-1.5%</span></div>
-                    <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="icon-circle">🔄</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">Binance descuenta su comisión <span>-4.1%</span></div>
-                    <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="icon-circle">🔗</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">Vendes USDT en P2P (Binance)</div>
-                    <div class="timeline-value" id="txt-paso4">0,00 USDT × Bs 0,00 = Bs 0,00</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Monto Banco -->
-        <div class="bank-card">
-            <div>
-                <span class="bank-title">MONTO A TENER EN EL BANCO</span>
-                <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
+                <!-- Monto Banco -->
+                <div class="bank-card">
+                    <div>
+                        <span class="bank-title">MONTO A TENER EN EL BANCO</span>
+                        <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
+                    </div>
+                    <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
+                </div>
             </div>
-            <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
-        </div>
 
-        <!-- Ganancia Estimada -->
-        <div class="profit-card">
-            <div class="profit-header">
-                <span class="profit-title">📈 Ganancia estimada</span>
-                <span class="profit-pct" id="txt-ganancia-pct">+0.00%</span>
-            </div>
-            <div class="profit-grid">
-                <div>
-                    <div class="profit-sub-title">En bolívares</div>
-                    <div class="profit-sub-value" id="txt-ganancia-bs">Bs 0,00</div>
+            <!-- COLUMNA DERECHA: RESULTADOS, CONTROLES Y TENDENCIA -->
+            <div class="column">
+                <!-- Ganancia Estimada -->
+                <div class="profit-card">
+                    <div class="profit-header">
+                        <span class="profit-title">📈 Ganancia estimada</span>
+                        <span class="profit-pct" id="txt-ganancia-pct">+0.00%</span>
+                    </div>
+                    <div class="profit-grid">
+                        <div>
+                            <div class="profit-sub-title">En bolívares</div>
+                            <div class="profit-sub-value" id="txt-ganancia-bs">Bs 0,00</div>
+                        </div>
+                        <div>
+                            <div class="profit-sub-title">En USDT</div>
+                            <div class="profit-sub-value" id="txt-ganancia-usdt">0,00 USDT</div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <div class="profit-sub-title">En USDT</div>
-                    <div class="profit-sub-value" id="txt-ganancia-usdt">0,00 USDT</div>
+
+                <!-- Panel de Control Alertas -->
+                <div class="panel-control">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+                        <span style="color: #a0aec0;">Ajustar Meta de Alerta:</span>
+                        <span id="valMeta" style="color: #10b981; font-weight: bold;">12%</span>
+                    </div>
+                    <input type="range" id="sliderMeta" min="1" max="25" value="12" style="width: 100%; accent-color: #10b981; cursor: pointer;">
+                </div>
+
+                <!-- NUEVO: Panel de Estadísticas de Sesión -->
+                <div class="panel-stats">
+                    <div class="panel-title-sec">Límites de la Sesión Actual</div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Margen Máximo</div>
+                            <div class="stat-val max" id="stat-max">0.00%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Margen Mínimo</div>
+                            <div class="stat-val min" id="stat-min">0.00%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel de la Gráfica -->
+                <div class="panel-chart">
+                    <div class="panel-title-sec">Tendencia del Margen Neto (En Vivo)</div>
+                    <canvas id="canvasMargen" style="max-height: 140px;"></canvas>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -390,11 +494,13 @@
         const TELEGRAM_BOT_TOKEN = 'telegram'; 
         const TELEGRAM_CHAT_ID = 'telegram';
         
-        // --- VARIABLES GLOBALES DEL SIMULADOR ---
-        let metaAlertas = 12; // Meta inicial dinámica
+        // --- VARIABLES GLOBALES ---
+        let metaAlertas = 12; 
         let miGrafica = null;
         let historialMargen = JSON.parse(localStorage.getItem('historial_margen_p2p')) || [];
         let ultimaNotificacionTiempo = 0;
+        let maxMargenSession = -999;
+        let minMargenSession = 999;
 
         // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
@@ -403,6 +509,9 @@
         const badgeEstado = document.getElementById('status-badge');
         const btnPermiso = document.getElementById('btn-permiso');
         const alertFlotante = document.getElementById('alert-flotante');
+        const sliderMeta = document.getElementById('sliderMeta');
+        const valMeta = document.getElementById('valMeta');
+        const txtMetaNotif = document.getElementById('txt-meta-notif');
 
         const txtPaso1 = document.getElementById('txt-paso1');
         const txtPaso2 = document.getElementById('txt-paso2');
@@ -412,12 +521,23 @@
         const txtGananciaPct = document.getElementById('txt-ganancia-pct');
         const txtGananciaBs = document.getElementById('txt-ganancia-bs');
         const txtGananciaUSDT = document.getElementById('txt-ganancia-usdt');
+        
+        const statMax = document.getElementById('stat-max');
+        const statMin = document.getElementById('stat-min');
 
         function formatVE(valor, decimales = 2) {
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        // Solicitar permisos para notificaciones del sistema
+        // Manejo del slider nativo en el HTML
+        sliderMeta.addEventListener('input', (e) => {
+            metaAlertas = parseFloat(e.target.value);
+            valMeta.textContent = metaAlertas + '%';
+            txtMetaNotif.textContent = 'Meta: ≥ ' + metaAlertas + '%';
+            calcularSimulacion(); 
+        });
+
+        // Activar notificaciones nativas
         btnPermiso.addEventListener('click', () => {
             if (!("Notification" in window)) {
                 alert("Este navegador no soporta notificaciones de escritorio.");
@@ -436,19 +556,15 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Verificar margen obedeciendo a la meta variable del Slider
         function evaluarAlertas(porcentaje, bcv, p2p) {
             if (porcentaje >= metaAlertas) {
-                // 1. Mostrar banner flotante en la web
                 alertFlotante.innerHTML = `🚨 ¡GANANCIA PERFECTA DETECTADA! 🚨<br>Margen actual: ${formatVE(porcentaje)}%<br>P2P: Bs ${formatVE(p2p)}`;
                 alertFlotante.classList.add('show');
 
-                // Limitar alarmas repetitivas a una cada 10 minutos
                 const ahora = Date.now();
                 if (ahora - ultimaNotificacionTiempo > 10 * 60 * 1000) {
                     ultimaNotificacionTiempo = ahora;
 
-                    // 2. Disparar Notificación del Navegador
                     if (window.Notification && Notification.permission === "granted") {
                         new Notification(`🚨 ¡Arbitraje Ideal (>= ${metaAlertas}%)!`, {
                             body: `Ganancia: ${formatVE(porcentaje)}% | BCV: ${bcv} | P2P: ${p2p}`,
@@ -456,17 +572,12 @@
                         });
                     }
 
-                    // 3. Enviar a Telegram
                     if (TELEGRAM_BOT_TOKEN !== 'telegram' && TELEGRAM_BOT_TOKEN !== '') {
                         const mensaje = `🚨 *¡OPORTUNIDAD DE ARBITRAJE!* 🚨\n\n📈 *Ganancia:* ${formatVE(porcentaje)}%\n🏛️ *BCV:* Bs ${formatVE(bcv)}\n🔗 *P2P Binance:* Bs ${formatVE(p2p)}`;
                         fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: TELEGRAM_CHAT_ID,
-                                text: mensaje,
-                                parse_mode: 'Markdown'
-                            })
+                            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: mensaje, parse_mode: 'Markdown' })
                         }).catch(e => console.error("Error enviando a Telegram", e));
                     }
                 }
@@ -490,7 +601,7 @@
             const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
             const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
 
-            // Renderizado de datos
+            // Renderizado
             txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
             txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
             txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
@@ -501,24 +612,32 @@
             txtGananciaBs.textContent = `Bs ${formatVE(gananciaBs)}`;
             txtGananciaUSDT.textContent = `${formatVE(gananciaUSDT)} USDT`;
 
-            // Ejecutar el detector de alertas
+            // Calcular récords de la sesión
+            if (porcentajeGanancia !== 0) {
+                if (porcentajeGanancia > maxMargenSession || maxMargenSession === -999) {
+                    maxMargenSession = porcentajeGanancia;
+                    statMax.textContent = `${maxMargenSession >= 0 ? '+' : ''}${formatVE(maxMargenSession)}%`;
+                }
+                if (porcentajeGanancia < minMargenSession || minMargenSession === 999) {
+                    minMargenSession = porcentajeGanancia;
+                    statMin.textContent = `${minMargenSession >= 0 ? '+' : ''}${formatVE(minMargenSession)}%`;
+                }
+            }
+
             evaluarAlertas(porcentajeGanancia, TasaBCV, TasaP2P);
         }
 
         async function obtenerTasasAPI() {
             try {
-                // 1. Buscamos el BCV oficial
                 const resBCV = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
                 const dataBCV = await resBCV.json();
                 const tasaBCV = dataBCV.promedio;
                 inputBCV.value = tasaBCV;
 
-                // Calculamos tu filtro automático con el colchón de 500Bs
                 const tasaConComision = tasaBCV * 1.005;
                 const costoTotalBanco = 500 * tasaConComision;
                 const montoBsFiltro = Math.round(costoTotalBanco + 500);
 
-                // 2. Buscamos el P2P pasándole tu filtro diario automatizado
                 const resBinanceVivo = await fetch(`https://simulador-dusky-zeta.vercel.app/api/binance-p2p?amount=${montoBsFiltro}`);
                 const dataBinance = await resBinanceVivo.json();
                 
@@ -527,11 +646,10 @@
                     badgeEstado.textContent = "Modo Auto (P2P En Vivo)";
                     badgeEstado.classList.remove('manual');
                 } else {
-                    throw new Error("Datos de Binance vacíos");
+                    throw new Error("Datos vacíos");
                 }
-                
             } catch (error) {
-                console.warn("Fallo el flujo en vivo, usando tasas de respaldo manuales", error);
+                console.warn("Usando tasas manuales", error);
                 badgeEstado.textContent = "Modo Manual (Error Red)";
                 badgeEstado.classList.add('manual');
             } finally {
@@ -540,7 +658,6 @@
             }
         }
 
-        // --- GESTIÓN DE HISTORIAL Y MINI-GRÁFICO ---
         function actualizarGraficaTendencia() {
             const margenActual = parseFloat(txtGananciaPct.textContent.replace('%', ''));
             if (isNaN(margenActual)) return;
@@ -549,58 +666,22 @@
             const horaTexto = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
 
             historialMargen.push({ hora: horaTexto, margen: margenActual });
-
-            // Mantener solo los últimos 15 puntos en pantalla
-            if (historialMargen.length > 15) {
-                historialMargen.shift();
-            }
+            if (historialMargen.length > 15) historialMargen.shift();
 
             localStorage.setItem('historial_margen_p2p', JSON.stringify(historialMargen));
 
-            // Cargar Chart.js asíncronamente si no existe
             if (typeof Chart === 'undefined') {
                 const scriptChart = document.createElement('script');
                 scriptChart.src = "https://cdn.jsdelivr.net/npm/chart.js";
-                scriptChart.onload = () => inicializarControlesYGrafica();
+                scriptChart.onload = () => renderizarGrafica();
                 document.head.appendChild(scriptChart);
             } else {
-                inicializarControlesYGrafica();
+                renderizarGrafica();
             }
         }
 
-        function inicializarControlesYGrafica() {
-            let canvas = document.getElementById('canvasMargen');
-            
-            if (!canvas) {
-                const containerPrincipal = document.querySelector('.container');
-                const contenedorControles = document.createElement('div');
-                contenedorControles.style = "margin-top: 20px; background: #1f2736; padding: 15px; border-radius: 8px; border: 1px solid #2d3748;";
-                
-                contenedorControles.innerHTML = `
-                    <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: flex; justify-content: space-between; color: #fff; font-size: 12px;">
-                            <span style="color: #a0aec0;">Ajustar Meta de Alerta:</span>
-                            <span id="valMeta" style="color: #10b981; font-weight: bold;">12%</span>
-                        </div>
-                        <input type="range" id="sliderMeta" min="1" max="25" value="12" style="width: 100%; accent-color: #10b981; cursor: pointer;">
-                    </div>
-                    <hr style="border: 0; border-top: 1px solid #2d3748; margin: 10px 0;">
-                    <h4 style="color:#fff; margin: 0 0 8px 0; font-size: 12px;">Tendencia del Margen Neto (En Vivo)</h4>
-                    <canvas id='canvasMargen' style='max-height: 150px;'></canvas>
-                `;
-                containerPrincipal.appendChild(contenedorControles);
-                
-                // Escuchador del Slider en tiempo real
-                document.getElementById('sliderMeta').addEventListener('input', (e) => {
-                    metaAlertas = parseFloat(e.target.value);
-                    document.getElementById('valMeta').textContent = metaAlertas + '%';
-                    document.getElementById('txt-meta-notif').textContent = 'Meta: ≥ ' + metaAlertas + '%';
-                    calcularSimulacion(); 
-                });
-                
-                canvas = document.getElementById('canvasMargen');
-            }
-
+        function renderizarGrafica() {
+            const canvas = document.getElementById('canvasMargen');
             const labels = historialMargen.map(item => item.hora);
             const datos = historialMargen.map(item => item.margen);
 
@@ -625,6 +706,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
                             x: { ticks: { color: '#a0aec0', font: { size: 9 } }, grid: { color: '#2d3748' } },
@@ -635,7 +717,6 @@
             }
         }
 
-        // Eventos iniciales
         document.addEventListener('DOMContentLoaded', () => {
             obtenerTasasAPI();
             setInterval(obtenerTasasAPI, 60 * 1000);
