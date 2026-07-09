@@ -1,5 +1,4 @@
 module.exports = async (req, res) => {
-    // Habilitar CORS para conectar con tu GitHub Pages
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -9,10 +8,8 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Capturamos el monto exacto (Costo Banco + Colchón) enviado desde el simulador
         const { amount } = req.query;
 
-        // Consulta directa a Binance P2P con tus parámetros blindados
         const response = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
             method: 'POST',
             headers: {
@@ -26,8 +23,8 @@ module.exports = async (req, res) => {
                 "page": 1,
                 "rows": 5,
                 "tradeType": "SELL",
-                "transAmount": amount ? String(amount) : "", // Tu filtro dinámico diario automatizado
-                "payTypes": ["BancoDeVenezuela"]              // Filtro fijo: Solo Banco de Venezuela
+                "transAmount": amount ? String(amount) : "",
+                "payTypes": ["BancoDeVenezuela"]
             })
         });
 
@@ -36,7 +33,6 @@ module.exports = async (req, res) => {
         
         let precioReal = 0;
         if (data.data && data.data.length > 0) {
-            // Extrae el precio del primer competidor real bajo tus filtros
             precioReal = parseFloat(data.data[0].adv.price);
         }
 
