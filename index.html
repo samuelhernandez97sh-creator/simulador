@@ -116,7 +116,6 @@
             outline: none;
         }
 
-        /* SELECTOR DE COMISIÓN ESTILO BOTONES */
         .commission-selector {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -212,9 +211,26 @@
             margin-top: 2px;
         }
 
+        /* CUADRÍCULA DE ADQUISICIÓN */
+        .bottom-results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
         .bank-card {
             background-color: #1a2438;
             border-left: 4px solid #3182ce;
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .binance-card {
+            background-color: #142421;
+            border-left: 4px solid #10b981;
             border-radius: 8px;
             padding: 14px;
             display: flex;
@@ -226,18 +242,35 @@
             font-size: 11px;
             font-weight: bold;
             color: #4299e1;
+            display: block;
         }
 
-        .bank-subtitle {
+        .binance-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #34d399;
+            display: block;
+        }
+
+        .bank-subtitle, .binance-subtitle {
             font-size: 10px;
             color: #718096;
             margin-top: 2px;
+            display: block;
         }
 
         .bank-amount {
             font-size: 16px;
             font-weight: bold;
             color: #4299e1;
+            white-space: nowrap;
+        }
+
+        .binance-amount {
+            font-size: 16px;
+            font-weight: bold;
+            color: #34d399;
+            white-space: nowrap;
         }
 
         .profit-card {
@@ -357,6 +390,9 @@
                 gap: 24px;
                 align-items: start;
             }
+            .bottom-results-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
@@ -445,12 +481,22 @@
                     </div>
                 </div>
 
-                <div class="bank-card">
-                    <div>
-                        <span class="bank-title">MONTO A TENER EN EL BANCO</span>
-                        <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
+                <div class="bottom-results-grid">
+                    <div class="bank-card">
+                        <div>
+                            <span class="bank-title">MONTO A TENER EN EL BANCO</span>
+                            <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
+                        </div>
+                        <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
                     </div>
-                    <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
+
+                    <div class="binance-card">
+                        <div>
+                            <span class="binance-title">MONTO A COLOCAR EN BINANCE</span>
+                            <span class="binance-subtitle">Capital neto tras comisión de tarjeta</span>
+                        </div>
+                        <div class="binance-amount" id="txt-monto-binance">$ 0,00</div>
+                    </div>
                 </div>
             </div>
 
@@ -504,7 +550,6 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE URL BASE DE VERCEL PARA EVITAR ERRORES EN REUTAS
         const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
         
         const TELEGRAM_BOT_TOKEN = ''; 
@@ -516,7 +561,7 @@
         let ultimaNotificacionTiempo = 0;
         let maxMargenSession = -999;
         let minMargenSession = 999;
-        let comisionTarjetaSeleccionada = 1.5; // Por defecto 1.5%
+        let comisionTarjetaSeleccionada = 1.5;
 
         // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
@@ -535,6 +580,7 @@
         const txtPaso3 = document.getElementById('txt-paso3');
         const txtPaso4 = document.getElementById('txt-paso4');
         const txtMontoBanco = document.getElementById('txt-monto-banco');
+        const txtMontoBinance = document.getElementById('txt-monto-binance'); // Nueva variable vinculada
         const txtGananciaPct = document.getElementById('txt-ganancia-pct');
         const txtGananciaBs = document.getElementById('txt-ganancia-bs');
         const txtGananciaUSDT = document.getElementById('txt-ganancia-usdt');
@@ -553,7 +599,6 @@
             calcularSimulacion(); 
         });
 
-        // Eventos para el nuevo selector de comisión
         document.querySelectorAll('.com-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.com-btn').forEach(b => b.classList.remove('active'));
@@ -598,171 +643,4 @@
                         });
                     }
 
-                    if (TELEGRAM_BOT_TOKEN !== '') {
-                        const mensaje = `🚨 *¡OPORTUNIDAD DE ARBITRAJE!* 🚨\n\n📈 *Ganancia:* ${formatVE(porcentaje)}%\n🏛️ *BCV:* Bs ${formatVE(bcv)}\n🔗 *P2P Binance:* Bs ${formatVE(p2p)}`;
-                        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: mensaje, parse_mode: 'Markdown' })
-                        }).catch(e => console.error("Error enviando a Telegram", e));
-                    }
-                }
-            } else {
-                alertFlotante.classList.remove('show');
-            }
-        }
-
-        function calcularSimulacion() {
-            const TasaBCV = parseFloat(inputBCV.value) || 0;
-            const TasaP2P = parseFloat(inputP2P.value) || 0;
-            const montoUSD = parseFloat(inputMonto.value) || 0;
-
-            const tasaConComision = TasaBCV * 1.005;
-            const costoTotalBanco = montoUSD * tasaConComision;
-            
-            // Aplica dinámicamente la comisión elegida (1.5% o 2.5%)
-            const factorTarjeta = (100 - comisionTarjetaSeleccionada) / 100;
-            const montoTarjeta = montoUSD * factorTarjeta;
-            
-            const montoUSDT = montoTarjeta * 0.959; // Mantiene el -4.1% neto para Binance
-            const ventaBolivares = montoUSDT * TasaP2P;
-
-            const gananciaBs = ventaBolivares - costoTotalBanco;
-            const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
-            const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
-
-            txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
-            txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
-            txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
-            txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(TasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
-            
-            txtMontoBanco.textContent = `Bs ${formatVE(costoTotalBanco)}`;
-            txtGananciaPct.textContent = `${porcentajeGanancia >= 0 ? '+' : ''}${formatVE(porcentajeGanancia)}%`;
-            txtGananciaBs.textContent = `Bs ${formatVE(gananciaBs)}`;
-            txtGananciaUSDT.textContent = `${formatVE(gananciaUSDT)} USDT`;
-
-            if (porcentajeGanancia !== 0) {
-                if (porcentajeGanancia > maxMargenSession || maxMargenSession === -999) {
-                    maxMargenSession = porcentajeGanancia;
-                    statMax.textContent = `${maxMargenSession >= 0 ? '+' : ''}${formatVE(maxMargenSession)}%`;
-                }
-                if (porcentajeGanancia < minMargenSession || minMargenSession === 999) {
-                    minMargenSession = porcentajeGanancia;
-                    statMin.textContent = `${minMargenSession >= 0 ? '+' : ''}${formatVE(minMargenSession)}%`;
-                }
-            }
-
-            evaluarAlertas(porcentajeGanancia, TasaBCV, TasaP2P);
-        }
-
-        async function obtenerTasasAPI() {
-            try {
-                // Hacemos fetch apuntando de forma absoluta a Vercel para asegurar compatibilidad
-                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
-                const dataBCV = await resBCV.json();
-                
-                if (!dataBCV.success) {
-                    throw new Error(dataBCV.error || "Error en la extracción del BCV");
-                }
-                
-                const tasaBCV = dataBCV.bcv;
-                inputBCV.value = tasaBCV;
-
-                const tasaConComision = tasaBCV * 1.005;
-                const costoTotalBanco = 500 * tasaConComision;
-                const montoBsFiltro = Math.round(costoTotalBanco + 500);
-
-                const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`);
-                const dataBinance = await resBinanceVivo.json();
-                
-                if(dataBinance.precio_binance_p2p) {
-                    inputP2P.value = dataBinance.precio_binance_p2p;
-                    badgeEstado.textContent = "Modo Auto (P2P En Vivo)";
-                    badgeEstado.classList.remove('manual');
-                } else {
-                    throw new Error("Datos vacíos de Binance");
-                }
-            } catch (error) {
-                console.warn("Usando tasas manuales debido a un error:", error);
-                badgeEstado.textContent = "Modo Manual (Error Red)";
-                badgeEstado.classList.add('manual');
-            } finally {
-                calcularSimulacion();
-                actualizarGraficaTendencia();
-            }
-        }
-
-        function actualizarGraficaTendencia() {
-            const margenActual = parseFloat(txtGananciaPct.textContent.replace('%', ''));
-            if (isNaN(margenActual)) return;
-
-            const ahora = new Date();
-            const horaTexto = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
-
-            historialMargen.push({ hora: horaTexto, margen: margenActual });
-            if (historialMargen.length > 15) historialMargen.shift();
-
-            localStorage.setItem('historial_margen_p2p', JSON.stringify(historialMargen));
-
-            if (typeof Chart === 'undefined') {
-                const scriptChart = document.createElement('script');
-                scriptChart.src = "https://cdn.jsdelivr.net/npm/chart.js";
-                scriptChart.onload = () => renderizarGrafica();
-                document.head.appendChild(scriptChart);
-            } else {
-                renderizarGrafica();
-            }
-        }
-
-        function renderizarGrafica() {
-            const canvas = document.getElementById('canvasMargen');
-            const labels = historialMargen.map(item => item.hora);
-            const datos = historialMargen.map(item => item.margen);
-
-            if (miGrafica) {
-                miGrafica.data.labels = labels;
-                miGrafica.data.datasets[0].data = datos;
-                miGrafica.update();
-            } else {
-                miGrafica = new Chart(canvas.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Margen %',
-                            data: datos,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                            borderWidth: 2,
-                            tension: 0.2,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { ticks: { color: '#a0aec0', font: { size: 9 } }, grid: { color: '#2d3748' } },
-                            y: { ticks: { color: '#a0aec0', font: { size: 9 } }, grid: { color: '#2d3748' } }
-                        }
-                    }
-                });
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            obtenerTasasAPI();
-            setInterval(obtenerTasasAPI, 60 * 1000);
-        });
-
-        [inputBCV, inputP2P, inputMonto].forEach(input => {
-            input.addEventListener('input', () => {
-                badgeEstado.textContent = "Modo Manual";
-                badgeEstado.classList.add('manual');
-                calcularSimulacion();
-            });
-        });
-    </script>
-</body>
-</html>
+                    if (TELEGRAM_BOT_TOKEN !==
