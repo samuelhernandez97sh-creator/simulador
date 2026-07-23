@@ -15,11 +15,23 @@ export default async function handler(req, res) {
     }
   };
 
+  // NUEVA FUENTE PRIORITARIA: tcambio.app
+  const fetchTCambio = async () => {
+    const response = await fetch('https://tcambio.app/', fetchOptions);
+    if (!response.ok) throw new Error('tcambio.app no disponible');
+    const html = await response.text();
+    // Expresión regular adaptada para extraer la tasa de la estructura de tcambio.app
+    const match = html.match(/Bs\.S\s*([\d,.]+)/i);
+    if (match && match[1]) {
+      return { bcv: parseFloat(match[1].trim().replace(/\./g, '').replace(',', '.')), source: 'tcambio_app' };
+    }
+    throw new Error('Estructura tcambio.app no encontrada');
+  };
+
   const fetchBCV = async () => {
     const response = await fetch('https://www.bcv.org.ve/glosario/cambio-oficial', fetchOptions);
     if (!response.ok) throw new Error('BCV no disponible');
     const html = await response.text();
-    // Intenta primero con la clase exacta strong-tb que tiene el valor limpio
     const match = html.match(/class=["']strong-tb["']>([\d,.]+)</i) || html.match(/id=["']dolar["'][\s\S]*?([\d,.]+)/i);
     if (match && match[1]) {
       return { bcv: parseFloat(match[1].trim().replace(/\./g, '').replace(',', '.')), source: 'bcv_oficial' };
@@ -48,15 +60,23 @@ export default async function handler(req, res) {
   };
 
   try {
-    const resultados = await Promise.allSettled([fetchBCV(), fetchExchangeMonitor(), fetchDolarApi()]);
+    // Se incluye fetchTCambio de primera en el arreglo
+    const resultados = await Promise.allSettled([
+      fetchTCambio(), 
+      fetchBCV(), 
+      fetchExchangeMonitor(), 
+      fetchDolarApi()
+    ]);
+    
     const exitosos = resultados.filter(r => r.status === 'fulfilled').map(r => r.value);
 
     if (exitosos.length === 0) {
       throw new Error('Todas las fuentes fallaron');
     }
 
-    // Filtramos por la tasa más alta para asegurar que agarre la actualización más reciente
-    const mejorTasa = exitosos.reduce((max, actual) => actual.bcv > max.bcv ? actual : max, exitosos[0]);
+    // Prioriza el valor exitoso de tcambio.app si está disponible, o aplica el filtro de mayor tasa
+    const mejorTasa = exitosos.find(r => r.source === 'tcambio_app') || 
+                      exitosos.reduce((max, actual) => actual.bcv > max.bcv ? actual : max, exitosos[0]);
 
     return res.status(200).json({
       success: true,
