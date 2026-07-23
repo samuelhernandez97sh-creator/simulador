@@ -768,9 +768,9 @@
 
             // Regla de notificación para ganancias entre 11% y 12%
             if (porcentajeGanancia >= 11 && porcentajeGanancia <= 12) {
-                // Envía alerta si pasó al menos 5 minutos desde la última alerta de ganancia para no saturar
+                // Envía alerta si pasó al menos 1 minuto desde la última alerta de ganancia para no saturar
                 const ahoraMs = Date.now();
-                if (ahoraMs - ultimaAlertaGananciaEnviada > 300000) {
+                if (ahoraMs - ultimaAlertaGananciaEnviada > 60000) {
                     enviarNotificacionTelegram(`📈 *¡ALERTA DE GANANCIA P2P!* 📈\n\nEl margen actual ha alcanzado *${formatVE(porcentajeGanancia)}%*.\nTasa P2P: Bs ${formatVE(TasaP2P)}\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
                     ultimaAlertaGananciaEnviada = ahoraMs;
                 }
