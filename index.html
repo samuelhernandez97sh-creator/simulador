@@ -402,6 +402,8 @@
 </head>
 <body>
 
+    <audio id="audioAlerta" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
     <div id="alert-flotante" class="floating-alert">
         🚨 ¡INTERVENCIÓN ACTIVA BDV! 🚨
     </div>
@@ -419,7 +421,7 @@
                 <div class="notif-panel">
                     <strong>Estado del Canal (Filtro BDV):</strong>
                     <div id="txt-estado-canal" style="margin-top:6px; color: #f87171; font-weight: bold;">🔴 Intervención BDV Cerrada</div>
-                    <button id="btn-permiso" class="notif-btn">Activar Alertas de Apertura BDV</button>
+                    <button id="btn-permiso" class="notif-btn">Activar Alertas y Sonido</button>
                 </div>
 
                 <div class="row-inputs">
@@ -567,6 +569,7 @@
         const alertFlotante = document.getElementById('alert-flotante');
         const txtEstadoCanal = document.getElementById('txt-estado-canal');
         const labelFeeTarjeta = document.getElementById('label-fee-tarjeta');
+        const audioAlerta = document.getElementById('audioAlerta');
 
         const txtPaso1 = document.getElementById('txt-paso1');
         const txtPaso2 = document.getElementById('txt-paso2');
@@ -602,21 +605,41 @@
             }
             Notification.requestPermission().then(permiso => {
                 if (permiso === "granted") {
-                    btnPermiso.textContent = "🔔 ¡Notificaciones BDV Activas!";
+                    btnPermiso.textContent = "🔔 ¡Sistema Anti-Inactividad Activo!";
                     btnPermiso.style.backgroundColor = "#10b981";
+                    audioAlerta.play().then(() => { audioAlerta.pause(); }).catch(e => {});
                 }
             });
         });
 
         if (window.Notification && Notification.permission === "granted") {
-            btnPermiso.textContent = "🔔 ¡Notificaciones BDV Activas!";
+            btnPermiso.textContent = "🔔 ¡Sistema Anti-Inactividad Activo!";
             btnPermiso.style.backgroundColor = "#10b981";
         }
+
+        // Web Worker embebido en Blob para evitar que el navegador duerma el temporizador en pestañas ocultas/segundo plano
+        const workerCode = `
+            self.onmessage = function(e) {
+                if (e.data === 'start') {
+                    setInterval(() => {
+                        self.postMessage('tick');
+                    }, 20000); // Consulta cada 20 segundos sin congelarse en segundo plano
+                }
+            };
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        const worker = new Worker(URL.createObjectURL(blob));
+
+        worker.onmessage = function(e) {
+            if (e.data === 'tick') {
+                obtenerTasasAPI();
+            }
+        };
+        worker.postMessage('start');
 
         function procesarEstadoCanal(textoUltimoMensaje) {
             const textoUpper = textoUltimoMensaje.toUpperCase();
             
-            // Validar estrictamente que el mensaje contenga "BDV" y esté relacionado con cerrada o activa
             const mencionaBDV = textoUpper.includes("BDV");
             const esCerrada = textoUpper.includes("CERRADA") && textoUpper.includes("INTERVENCI");
             const esActiva = (textoUpper.includes("ACTIVA") || textoUpper.includes("SIGUE ACTIVA")) && textoUpper.includes("INTERVENCI");
@@ -640,13 +663,18 @@
                 if (estadoCanalAnterior !== "ABIERTO") {
                     if (window.Notification && Notification.permission === "granted") {
                         new Notification("🚨 ¡Intervención Activa BDV!", {
-                            body: textoUltimoMensaje
+                            body: textoUltimoMensaje,
+                            requireInteraction: true
                         });
                     }
+                    try {
+                        audioAlerta.currentTime = 0;
+                        audioAlerta.play();
+                    } catch (err) {}
+                    
                     estadoCanalAnterior = "ABIERTO";
                 }
             } else {
-                // Si el último mensaje no menciona BDV o no cumple la regla estricta, mantiene el último estado conocido o muestra el texto genérico
                 if (!estadoCanalAnterior) {
                     txtEstadoCanal.textContent = "⚪ " + textoUltimoMensaje;
                     txtEstadoCanal.style.color = "#a0aec0";
@@ -718,7 +746,6 @@
                 if (dataBinance.ultimo_mensaje_canal) {
                     procesarEstadoCanal(dataBinance.ultimo_mensaje_canal);
                 } else {
-                    // Texto de prueba que incluye BDV para validación estricta
                     procesarEstadoCanal("CERRADA INTERVENCIÓN EN BDV"); 
                 }
 
@@ -791,7 +818,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             obtenerTasasAPI();
-            setInterval(obtenerTasasAPI, 60 * 1000);
         });
 
         [inputBCV, inputP2P, inputMonto].forEach(input => {
