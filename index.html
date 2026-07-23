@@ -551,7 +551,6 @@
     </div>
 
     <script>
-        // Dirección absoluta apuntando a tu Vercel de manera directa
         const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
         
         const TELEGRAM_BOT_TOKEN = ''; 
@@ -703,7 +702,6 @@
 
         async function obtenerTasasAPI() {
             try {
-                // Petición directa a tu Endpoint BCV de Vercel
                 const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
                 const dataBCV = await resBCV.json();
                 
@@ -714,13 +712,11 @@
                 const tasaBCV = dataBCV.bcv;
                 inputBCV.value = tasaBCV;
 
-                // Definimos un volumen aproximado inicial en base al campo "monto-compra"
                 const montoUSD = parseFloat(inputMonto.value) || 500;
                 const tasaConComision = tasaBCV * 1.005;
                 const costoTotalBanco = montoUSD * tasaConComision;
                 const montoBsFiltro = Math.round(costoTotalBanco);
 
-                // Petición directa a tu Endpoint Binance de Vercel pasándole el monto dinámico
                 const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`);
                 const dataBinance = await resBinanceVivo.json();
                 
