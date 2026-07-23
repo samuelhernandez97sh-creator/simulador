@@ -47,6 +47,13 @@
             font-weight: 600;
         }
 
+        .header-status-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
         .badge {
             background-color: rgba(16, 185, 129, 0.1);
             color: #10b981;
@@ -64,6 +71,12 @@
         .badge.cerrado {
             background-color: rgba(239, 68, 68, 0.15);
             color: #f87171;
+        }
+
+        .last-update-time {
+            font-size: 10px;
+            color: #a0aec0;
+            font-family: monospace;
         }
 
         .main-layout {
@@ -411,7 +424,10 @@
     <div class="container">
         <div class="header">
             <h1>Simulador</h1>
-            <span id="status-badge" class="badge">Monitoreando BDV...</span>
+            <div class="header-status-box">
+                <span id="status-badge" class="badge">Monitoreando BDV...</span>
+                <span id="txt-ultima-hora" class="last-update-time">Actualizado: --:--:--</span>
+            </div>
         </div>
 
         <div class="main-layout">
@@ -565,6 +581,7 @@
         const inputP2P = document.getElementById('tasa-p2p');
         const inputMonto = document.getElementById('monto-compra');
         const badgeEstado = document.getElementById('status-badge');
+        const txtUltimaHora = document.getElementById('txt-ultima-hora');
         const btnPermiso = document.getElementById('btn-permiso');
         const alertFlotante = document.getElementById('alert-flotante');
         const txtEstadoCanal = document.getElementById('txt-estado-canal');
@@ -617,13 +634,13 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Web Worker embebido en Blob para evitar que el navegador duerma el temporizador en pestañas ocultas/segundo plano
+        // Web Worker configurado exactamente para vigilar y actualizar cada 20 segundos sin congelarse en segundo plano
         const workerCode = `
             self.onmessage = function(e) {
                 if (e.data === 'start') {
                     setInterval(() => {
                         self.postMessage('tick');
-                    }, 20000); // Consulta cada 20 segundos sin congelarse en segundo plano
+                    }, 20000); // 20 segundos exactos
                 }
             };
         `;
@@ -754,6 +771,11 @@
             } finally {
                 calcularSimulacion();
                 actualizarGraficaTendencia();
+                
+                // Actualiza el indicador visual con la hora exacta (HH:MM:SS) de la sincronización
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                txtUltimaHora.textContent = `Actualizado: ${horaActual}`;
             }
         }
 
