@@ -15,17 +15,18 @@ export default async function handler(req, res) {
     }
   };
 
-  // FUENTE PRIORITARIA ACTUALIZADA SEGÚN EL INSPECTOR
   const fetchTCambio = async () => {
     const response = await fetch('https://tcambio.app/', fetchOptions);
     if (!response.ok) throw new Error('tcambio.app no disponible');
     const html = await response.text();
     
-    // Selector corregido para buscar dentro del id="mount" o la etiqueta strong directa
-    const match = html.match(/id=["']mount["'][\s\S]*?<strong>([\d,.]+)<\/strong>/i) || html.match(/Bs\.S\s*<strong>([\d,.]+)<\/strong>/i);
+    // Expresión regular ajustada para capturar números con punto o coma decimal (ej: 737.88 o 737,88)
+    const match = html.match(/id=["']mount["'][\s\S]*?<strong>([\d]+[.,][\d]+)<\/strong>/i) || html.match(/Bs\.S\s*<strong>([\d]+[.,][\d]+)<\/strong>/i);
     
     if (match && match[1]) {
-      return { bcv: parseFloat(match[1].trim().replace(/\./g, '').replace(',', '.')), source: 'tcambio_app' };
+      // Reemplaza la coma por un punto para que parseFloat la reconozca correctamente como decimal
+      const valorLimpio = match[1].trim().replace(',', '.');
+      return { bcv: parseFloat(valorLimpio), source: 'tcambio_app' };
     }
     throw new Error('Estructura tcambio.app no encontrada');
   };
