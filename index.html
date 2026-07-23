@@ -61,6 +61,11 @@
             color: #f59e0b;
         }
 
+        .badge.cerrado {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
         .main-layout {
             display: flex;
             flex-direction: column;
@@ -362,7 +367,7 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%) translateY(-150%);
-            background-color: #e53e3e;
+            background-color: #10b981;
             color: white;
             padding: 16px 24px;
             border-radius: 8px;
@@ -398,13 +403,13 @@
 <body>
 
     <div id="alert-flotante" class="floating-alert">
-        🚨 ¡OPORTUNIDAD DETECTADA! 🚨
+        🚨 ¡INTERVENCIÓN ACTIVA BDV! 🚨
     </div>
 
     <div class="container">
         <div class="header">
             <h1>Simulador</h1>
-            <span id="status-badge" class="badge">Modo Auto</span>
+            <span id="status-badge" class="badge">Monitoreando BDV...</span>
         </div>
 
         <div class="main-layout">
@@ -412,8 +417,9 @@
             <!-- COLUMNA IZQUIERDA -->
             <div class="column">
                 <div class="notif-panel">
-                    <strong>Campana de Alertas (<span id="txt-meta-notif">Meta: ≥ 12%</span>):</strong>
-                    <button id="btn-permiso" class="notif-btn">Activar Notificaciones en Celular/PC</button>
+                    <strong>Estado del Canal (Filtro BDV):</strong>
+                    <div id="txt-estado-canal" style="margin-top:6px; color: #f87171; font-weight: bold;">🔴 Intervención BDV Cerrada</div>
+                    <button id="btn-permiso" class="notif-btn">Activar Alertas de Apertura BDV</button>
                 </div>
 
                 <div class="row-inputs">
@@ -519,14 +525,6 @@
                     </div>
                 </div>
 
-                <div class="panel-control">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
-                        <span style="color: #a0aec0;">Ajustar Meta de Alerta:</span>
-                        <span id="valMeta" style="color: #10b981; font-weight: bold;">12%</span>
-                    </div>
-                    <input type="range" id="sliderMeta" min="1" max="25" value="12" style="width: 100%; accent-color: #10b981; cursor: pointer;">
-                </div>
-
                 <div class="panel-stats">
                     <div class="panel-title-sec">Límites de la Sesión Actual</div>
                     <div class="stats-grid">
@@ -553,16 +551,12 @@
     <script>
         const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
         
-        const TELEGRAM_BOT_TOKEN = ''; 
-        const TELEGRAM_CHAT_ID = '';
-        
-        let metaAlertas = 12; 
         let miGrafica = null;
         let historialMargen = JSON.parse(localStorage.getItem('historial_margen_p2p')) || [];
-        let ultimaNotificacionTiempo = 0;
         let maxMargenSession = -999;
         let minMargenSession = 999;
         let comisionTarjetaSeleccionada = 1.5;
+        let estadoCanalAnterior = "";
 
         // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
@@ -571,9 +565,7 @@
         const badgeEstado = document.getElementById('status-badge');
         const btnPermiso = document.getElementById('btn-permiso');
         const alertFlotante = document.getElementById('alert-flotante');
-        const sliderMeta = document.getElementById('sliderMeta');
-        const valMeta = document.getElementById('valMeta');
-        const txtMetaNotif = document.getElementById('txt-meta-notif');
+        const txtEstadoCanal = document.getElementById('txt-estado-canal');
         const labelFeeTarjeta = document.getElementById('label-fee-tarjeta');
 
         const txtPaso1 = document.getElementById('txt-paso1');
@@ -593,13 +585,6 @@
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        sliderMeta.addEventListener('input', (e) => {
-            metaAlertas = parseFloat(e.target.value);
-            valMeta.textContent = metaAlertas + '%';
-            txtMetaNotif.textContent = 'Meta: ≥ ' + metaAlertas + '%';
-            calcularSimulacion(); 
-        });
-
         document.querySelectorAll('.com-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.com-btn').forEach(b => b.classList.remove('active'));
@@ -617,43 +602,55 @@
             }
             Notification.requestPermission().then(permiso => {
                 if (permiso === "granted") {
-                    btnPermiso.textContent = "🔔 ¡Alertas del Sistema Activas!";
+                    btnPermiso.textContent = "🔔 ¡Notificaciones BDV Activas!";
                     btnPermiso.style.backgroundColor = "#10b981";
                 }
             });
         });
 
         if (window.Notification && Notification.permission === "granted") {
-            btnPermiso.textContent = "🔔 ¡Alertas del Sistema Activas!";
+            btnPermiso.textContent = "🔔 ¡Notificaciones BDV Activas!";
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        function evaluarAlertas(porcentaje, bcv, p2p) {
-            if (porcentaje >= metaAlertas) {
-                alertFlotante.innerHTML = `🚨 ¡GANANCIA PERFECTA DETECTADA! 🚨<br>Margen actual: ${formatVE(porcentaje)}%<br>P2P: Bs ${formatVE(p2p)}`;
+        function procesarEstadoCanal(textoUltimoMensaje) {
+            const textoUpper = textoUltimoMensaje.toUpperCase();
+            
+            // Validar estrictamente que el mensaje contenga "BDV" y esté relacionado con cerrada o activa
+            const mencionaBDV = textoUpper.includes("BDV");
+            const esCerrada = textoUpper.includes("CERRADA") && textoUpper.includes("INTERVENCI");
+            const esActiva = (textoUpper.includes("ACTIVA") || textoUpper.includes("SIGUE ACTIVA")) && textoUpper.includes("INTERVENCI");
+
+            if (mencionaBDV && esCerrada) {
+                txtEstadoCanal.textContent = "🔴 Intervención BDV Cerrada";
+                txtEstadoCanal.style.color = "#f87171";
+                badgeEstado.textContent = "BDV: Cerrado";
+                badgeEstado.className = "badge cerrado";
+                alertFlotante.classList.remove('show');
+                estadoCanalAnterior = "CERRADO";
+            } else if (mencionaBDV && esActiva) {
+                txtEstadoCanal.textContent = "🟢 ¡Intervención Activa BDV!";
+                txtEstadoCanal.style.color = "#34d399";
+                badgeEstado.textContent = "BDV: Abierto";
+                badgeEstado.className = "badge";
+
+                alertFlotante.innerHTML = `🚨 ¡INTERVENCIÓN ACTIVA BDV! 🚨<br><span style="font-size:12px">${textoUltimoMensaje}</span>`;
                 alertFlotante.classList.add('show');
 
-                const ahora = Date.now();
-                if (ahora - ultimaNotificacionTiempo > 10 * 60 * 1000) {
-                    ultimaNotificacionTiempo = ahora;
-
+                if (estadoCanalAnterior !== "ABIERTO") {
                     if (window.Notification && Notification.permission === "granted") {
-                        new Notification(`🚨 ¡Arbitraje Ideal (>= ${metaAlertas}%)!`, {
-                            body: `Ganancia: ${formatVE(porcentaje)}% | BCV: ${bcv} | P2P: ${p2p}`,
+                        new Notification("🚨 ¡Intervención Activa BDV!", {
+                            body: textoUltimoMensaje
                         });
                     }
-
-                    if (TELEGRAM_BOT_TOKEN !== '') {
-                        const mensaje = `🚨 *¡OPORTUNIDAD DE ARBITRAJE!* 🚨\n\n📈 *Ganancia:* ${formatVE(porcentaje)}%\n🏛️ *BCV:* Bs ${formatVE(bcv)}\n🔗 *P2P Binance:* Bs ${formatVE(p2p)}`;
-                        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: mensaje, parse_mode: 'Markdown' })
-                        }).catch(e => console.error("Error Telegram", e));
-                    }
+                    estadoCanalAnterior = "ABIERTO";
                 }
             } else {
-                alertFlotante.classList.remove('show');
+                // Si el último mensaje no menciona BDV o no cumple la regla estricta, mantiene el último estado conocido o muestra el texto genérico
+                if (!estadoCanalAnterior) {
+                    txtEstadoCanal.textContent = "⚪ " + textoUltimoMensaje;
+                    txtEstadoCanal.style.color = "#a0aec0";
+                }
             }
         }
 
@@ -696,8 +693,6 @@
                     statMin.textContent = `${minMargenSession >= 0 ? '+' : ''}${formatVE(minMargenSession)}%`;
                 }
             }
-
-            evaluarAlertas(porcentajeGanancia, TasaBCV, TasaP2P);
         }
 
         async function obtenerTasasAPI() {
@@ -705,16 +700,12 @@
                 const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
                 const dataBCV = await resBCV.json();
                 
-                if (!dataBCV.success) {
-                    throw new Error("Error procesando BCV");
-                }
-                
+                if (!dataBCV.success) throw new Error("Error BCV");
                 const tasaBCV = dataBCV.bcv;
                 inputBCV.value = tasaBCV;
 
                 const montoUSD = parseFloat(inputMonto.value) || 500;
-                const tasaConComision = tasaBCV * 1.005;
-                const costoTotalBanco = montoUSD * tasaConComision;
+                const costoTotalBanco = montoUSD * (tasaBCV * 1.005);
                 const montoBsFiltro = Math.round(costoTotalBanco);
 
                 const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`);
@@ -722,15 +713,17 @@
                 
                 if(dataBinance.precio_binance_p2p) {
                     inputP2P.value = dataBinance.precio_binance_p2p;
-                    badgeEstado.textContent = "Modo Auto (P2P En Vivo)";
-                    badgeEstado.classList.remove('manual');
-                } else {
-                    throw new Error("Datos P2P no disponibles");
                 }
+
+                if (dataBinance.ultimo_mensaje_canal) {
+                    procesarEstadoCanal(dataBinance.ultimo_mensaje_canal);
+                } else {
+                    // Texto de prueba que incluye BDV para validación estricta
+                    procesarEstadoCanal("CERRADA INTERVENCIÓN EN BDV"); 
+                }
+
             } catch (error) {
-                console.warn("Error de red o CORS detectado, cambiando a modo manual momentáneo:", error);
-                badgeEstado.textContent = "Modo Manual (Error Conexión)";
-                badgeEstado.classList.add('manual');
+                console.warn("Modo manual o error de conexión:", error);
             } finally {
                 calcularSimulacion();
                 actualizarGraficaTendencia();
@@ -803,8 +796,6 @@
 
         [inputBCV, inputP2P, inputMonto].forEach(input => {
             input.addEventListener('input', () => {
-                badgeEstado.textContent = "Modo Manual";
-                badgeEstado.classList.add('manual');
                 calcularSimulacion();
             });
         });
