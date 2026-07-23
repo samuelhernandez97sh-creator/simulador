@@ -568,6 +568,8 @@
 
     <script>
         const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
+        const TELEGRAM_BOT_TOKEN = '8946597702:AAEzSTw_-rNIWEyUtISWAxrcumqdwbylKWI';
+        const TELEGRAM_CHAT_ID = '304678344';
         
         let miGrafica = null;
         let historialMargen = JSON.parse(localStorage.getItem('historial_margen_p2p')) || [];
@@ -575,6 +577,7 @@
         let minMargenSession = 999;
         let comisionTarjetaSeleccionada = 1.5;
         let estadoCanalAnterior = "";
+        let ultimaAlertaGananciaEnviada = 0; // Control para no repetir la alerta de 11%-12% constantemente en el mismo ciclo
 
         // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
@@ -603,6 +606,24 @@
 
         function formatVE(valor, decimales = 2) {
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+        }
+
+        // Función para enviar mensajes a Telegram de forma directa
+        async function enviarNotificacionTelegram(texto) {
+            try {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: texto,
+                        parse_mode: 'Markdown'
+                    })
+                });
+            } catch (err) {
+                console.error("Error al enviar mensaje a Telegram:", err);
+            }
         }
 
         document.querySelectorAll('.com-btn').forEach(btn => {
@@ -634,13 +655,13 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Web Worker configurado exactamente para vigilar y actualizar cada 20 segundos sin congelarse en segundo plano
+        // Web Worker para mantener la vigilancia cada 20 segundos sin congelarse en segundo plano
         const workerCode = `
             self.onmessage = function(e) {
                 if (e.data === 'start') {
                     setInterval(() => {
                         self.postMessage('tick');
-                    }, 20000); // 20 segundos exactos
+                    }, 20000);
                 }
             };
         `;
@@ -667,7 +688,12 @@
                 badgeEstado.textContent = "BDV: Cerrado";
                 badgeEstado.className = "badge cerrado";
                 alertFlotante.classList.remove('show');
+
+                if (estadoCanalAnterior !== "CERRADO" && estadoCanalAnterior !== "") {
+                    enviarNotificacionTelegram("🔴 *Intervención BDV CERRADA*\n\nEl sistema detectó el cierre de la intervención.");
+                }
                 estadoCanalAnterior = "CERRADO";
+
             } else if (mencionaBDV && esActiva) {
                 txtEstadoCanal.textContent = "🟢 ¡Intervención Activa BDV!";
                 txtEstadoCanal.style.color = "#34d399";
@@ -689,6 +715,7 @@
                         audioAlerta.play();
                     } catch (err) {}
                     
+                    enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN ACTIVA BDV!* 🟢\n\n${textoUltimoMensaje}`);
                     estadoCanalAnterior = "ABIERTO";
                 }
             } else {
@@ -738,6 +765,16 @@
                     statMin.textContent = `${minMargenSession >= 0 ? '+' : ''}${formatVE(minMargenSession)}%`;
                 }
             }
+
+            // Regla de notificación para ganancias entre 11% y 12%
+            if (porcentajeGanancia >= 11 && porcentajeGanancia <= 12) {
+                // Envía alerta si pasó al menos 5 minutos desde la última alerta de ganancia para no saturar
+                const ahoraMs = Date.now();
+                if (ahoraMs - ultimaAlertaGananciaEnviada > 300000) {
+                    enviarNotificacionTelegram(`📈 *¡ALERTA DE GANANCIA P2P!* 📈\n\nEl margen actual ha alcanzado *${formatVE(porcentajeGanancia)}%*.\nTasa P2P: Bs ${formatVE(TasaP2P)}\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
+                    ultimaAlertaGananciaEnviada = ahoraMs;
+                }
+            }
         }
 
         async function obtenerTasasAPI() {
@@ -772,7 +809,6 @@
                 calcularSimulacion();
                 actualizarGraficaTendencia();
                 
-                // Actualiza el indicador visual con la hora exacta (HH:MM:SS) de la sincronización
                 const ahora = new Date();
                 const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 txtUltimaHora.textContent = `Actualizado: ${horaActual}`;
