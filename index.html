@@ -767,7 +767,7 @@
             }
 
             // Regla de notificación para ganancias entre 11% y 12%
-            if (porcentajeGanancia >= 10.5 && porcentajeGanancia <= 13) {
+            if (porcentajeGanancia >= 12.5 && porcentajeGanancia <= 15) {
                 // Envía alerta si pasó al menos 1 minuto desde la última alerta de ganancia para no saturar
                 const ahoraMs = Date.now();
                 if (ahoraMs - ultimaAlertaGananciaEnviada > 60000) {
