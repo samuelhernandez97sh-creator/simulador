@@ -63,11 +63,6 @@
             font-weight: bold;
         }
 
-        .badge.manual {
-            background-color: rgba(245, 158, 11, 0.1);
-            color: #f59e0b;
-        }
-
         .badge.cerrado {
             background-color: rgba(239, 68, 68, 0.15);
             color: #f87171;
@@ -577,7 +572,7 @@
         let minMargenSession = 999;
         let comisionTarjetaSeleccionada = 1.5;
         let estadoCanalAnterior = "";
-        let ultimaAlertaGananciaEnviada = 0; // Control para no repetir la alerta de 11%-12% constantemente en el mismo ciclo
+        let ultimaAlertaGananciaEnviada = 0;
 
         // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
@@ -608,17 +603,16 @@
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        // Función para enviar mensajes a Telegram de forma directa
+        // Envío seguro a Telegram mediado por tu backend en Vercel para evitar bloqueos CORS del navegador
         async function enviarNotificacionTelegram(texto) {
             try {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-                await fetch(url, {
+                await fetch(`${VERCEL_URL}/api/send-telegram`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        token: TELEGRAM_BOT_TOKEN,
                         chat_id: TELEGRAM_CHAT_ID,
-                        text: texto,
-                        parse_mode: 'Markdown'
+                        text: texto
                     })
                 });
             } catch (err) {
@@ -655,7 +649,7 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Web Worker para mantener la vigilancia cada 20 segundos sin congelarse en segundo plano
+        // Web Worker para vigilancia cada 20 segundos sin pausas en segundo plano
         const workerCode = `
             self.onmessage = function(e) {
                 if (e.data === 'start') {
@@ -679,22 +673,18 @@
             const textoUpper = textoUltimoMensaje.toUpperCase();
             
             const mencionaBDV = textoUpper.includes("BDV");
-            const esCerrada = textoUpper.includes("CERRADA") && textoUpper.includes("INTERVENCI");
-            const esActiva = (textoUpper.includes("ACTIVA") || textoUpper.includes("SIGUE ACTIVA")) && textoUpper.includes("INTERVENCI");
+            
+            // Filtro flexible adaptado a los mensajes reales del canal ("ACTIVO", "SIGUE ACTIVA", "INTERVENCIÓN DIGITAL")
+            const esActiva = mencionaBDV && (
+                textoUpper.includes("ACTIVA") || 
+                textoUpper.includes("ACTIVO") || 
+                textoUpper.includes("SIGUE ACTIVA") || 
+                textoUpper.includes("INTERVENCIÓN DIGITAL")
+            );
+            
+            const esCerrada = mencionaBDV && (textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA"));
 
-            if (mencionaBDV && esCerrada) {
-                txtEstadoCanal.textContent = "🔴 Intervención BDV Cerrada";
-                txtEstadoCanal.style.color = "#f87171";
-                badgeEstado.textContent = "BDV: Cerrado";
-                badgeEstado.className = "badge cerrado";
-                alertFlotante.classList.remove('show');
-
-                if (estadoCanalAnterior !== "CERRADO" && estadoCanalAnterior !== "") {
-                    enviarNotificacionTelegram("🔴 *Intervención BDV CERRADA*\n\nEl sistema detectó el cierre de la intervención.");
-                }
-                estadoCanalAnterior = "CERRADO";
-
-            } else if (mencionaBDV && esActiva) {
+            if (esActiva) {
                 txtEstadoCanal.textContent = "🟢 ¡Intervención Activa BDV!";
                 txtEstadoCanal.style.color = "#34d399";
                 badgeEstado.textContent = "BDV: Abierto";
@@ -718,6 +708,17 @@
                     enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN ACTIVA BDV!* 🟢\n\n${textoUltimoMensaje}`);
                     estadoCanalAnterior = "ABIERTO";
                 }
+            } else if (esCerrada) {
+                txtEstadoCanal.textContent = "🔴 Intervención BDV Cerrada";
+                txtEstadoCanal.style.color = "#f87171";
+                badgeEstado.textContent = "BDV: Cerrado";
+                badgeEstado.className = "badge cerrado";
+                alertFlotante.classList.remove('show');
+
+                if (estadoCanalAnterior !== "CERRADO" && estadoCanalAnterior !== "") {
+                    enviarNotificacionTelegram("🔴 *Intervención BDV CERRADA*\n\nEl sistema detectó el cierre de la intervención.");
+                }
+                estadoCanalAnterior = "CERRADO";
             } else {
                 if (!estadoCanalAnterior) {
                     txtEstadoCanal.textContent = "⚪ " + textoUltimoMensaje;
@@ -766,11 +767,10 @@
                 }
             }
 
-            // Regla de notificación para ganancias entre 11% y 12%
-            if (porcentajeGanancia >= 12.5 && porcentajeGanancia <= 15) {
-                // Envía alerta si pasó al menos 1 minuto desde la última alerta de ganancia para no saturar
+            // Alerta de Telegram si la ganancia está entre 11% y 12% (con intervalo de 5 minutos de espera)
+            if (porcentajeGanancia >= 11 && porcentajeGanancia <= 12) {
                 const ahoraMs = Date.now();
-                if (ahoraMs - ultimaAlertaGananciaEnviada > 60000) {
+                if (ahoraMs - ultimaAlertaGananciaEnviada > 300000) {
                     enviarNotificacionTelegram(`📈 *¡ALERTA DE GANANCIA P2P!* 📈\n\nEl margen actual ha alcanzado *${formatVE(porcentajeGanancia)}%*.\nTasa P2P: Bs ${formatVE(TasaP2P)}\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
                     ultimaAlertaGananciaEnviada = ahoraMs;
                 }
@@ -799,8 +799,6 @@
 
                 if (dataBinance.ultimo_mensaje_canal) {
                     procesarEstadoCanal(dataBinance.ultimo_mensaje_canal);
-                } else {
-                    procesarEstadoCanal("CERRADA INTERVENCIÓN EN BDV"); 
                 }
 
             } catch (error) {
