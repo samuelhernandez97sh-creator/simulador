@@ -99,6 +99,10 @@
             border: 1px solid #2d3748;
         }
 
+        .input-group.full-width {
+            grid-column: span 2;
+        }
+
         .input-label {
             font-size: 11px;
             color: #a0aec0;
@@ -453,8 +457,21 @@
                 </div>
 
                 <div class="row-inputs">
+                    <!-- NUEVO CAMPO: Saldo disponible en bolívares -->
+                    <div class="input-group full-width" style="background-color: #182336; border-color: #2b4c7e;">
+                        <label class="input-label" style="color: #63b3ed;">💰 Mi saldo en Bolívares (Disponibles)</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">Bs</span>
+                            <input type="number" id="saldo-bs-usuario" class="input-field" step="1" value="0" placeholder="Ej: 300000">
+                        </div>
+                        <div style="font-size: 11px; color: #90cdf4; margin-top: 6px; display: flex; justify-content: space-between;">
+                            <span>Equivalente a comprar:</span>
+                            <strong id="txt-usd-equivalente">$0,00 USD</strong>
+                        </div>
+                    </div>
+
                     <div class="input-group">
-                        <label class="input-label">Monto a comprar</label>
+                        <label class="input-label">Monto a comprar (Base USD)</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">$</span>
                             <input type="number" id="monto-compra" class="input-field" step="1" value="500">
@@ -578,6 +595,9 @@
         const inputBCV = document.getElementById('tasa-bcv');
         const inputP2P = document.getElementById('tasa-p2p');
         const inputMonto = document.getElementById('monto-compra');
+        const inputSaldoBsUsuario = document.getElementById('saldo-bs-usuario');
+        const txtUsdEquivalente = document.getElementById('txt-usd-equivalente');
+
         const badgeEstado = document.getElementById('status-badge');
         const txtUltimaHora = document.getElementById('txt-ultima-hora');
         const btnPermiso = document.getElementById('btn-permiso');
@@ -603,7 +623,6 @@
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        // Envío seguro a Telegram mediado por tu backend en Vercel para evitar bloqueos CORS del navegador
         async function enviarNotificacionTelegram(texto) {
             try {
                 await fetch(`${VERCEL_URL}/api/send-telegram`, {
@@ -649,7 +668,6 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Web Worker para vigilancia cada 20 segundos sin pausas en segundo plano
         const workerCode = `
             self.onmessage = function(e) {
                 if (e.data === 'start') {
@@ -671,17 +689,13 @@
 
         function procesarEstadoCanal(textoUltimoMensaje) {
             const textoUpper = textoUltimoMensaje.toUpperCase();
-            
             const mencionaBDV = textoUpper.includes("BDV");
-            
-            // Filtro flexible adaptado a los mensajes reales del canal ("ACTIVO", "SIGUE ACTIVA", "INTERVENCIÓN DIGITAL")
             const esActiva = mencionaBDV && (
                 textoUpper.includes("ACTIVA") || 
                 textoUpper.includes("ACTIVO") || 
                 textoUpper.includes("SIGUE ACTIVA") || 
                 textoUpper.includes("INTERVENCIÓN DIGITAL")
             );
-            
             const esCerrada = mencionaBDV && (textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA"));
 
             if (esActiva) {
@@ -731,13 +745,20 @@
             const TasaBCV = parseFloat(inputBCV.value) || 0;
             const TasaP2P = parseFloat(inputP2P.value) || 0;
             const montoUSD = parseFloat(inputMonto.value) || 0;
+            const saldoBsUsuario = parseFloat(inputSaldoBsUsuario.value) || 0;
 
+            // Calcular equivalencia de dólares que puedes comprar con tus bolívares (Tasa BCV + 0.5%)
             const tasaConComision = TasaBCV * 1.005;
+            if (tasaConComision > 0 && saldoBsUsuario > 0) {
+                const usdEquivalentes = saldoBsUsuario / tasaConComision;
+                txtUsdEquivalente.textContent = `$${formatVE(usdEquivalentes)} USD`;
+            } else {
+                txtUsdEquivalente.textContent = `$0,00 USD`;
+            }
+
             const costoTotalBanco = montoUSD * tasaConComision;
-            
             const factorTarjeta = (100 - comisionTarjetaSeleccionada) / 100;
             const montoTarjeta = montoUSD * factorTarjeta;
-            
             const montoUSDT = montoTarjeta * 0.959; 
             const ventaBolivares = montoUSDT * TasaP2P;
 
@@ -767,7 +788,6 @@
                 }
             }
 
-            // Alerta de Telegram si la ganancia está entre 11% y 12% (con intervalo de 5 minutos de espera)
             if (porcentajeGanancia >= 11 && porcentajeGanancia <= 12) {
                 const ahoraMs = Date.now();
                 if (ahoraMs - ultimaAlertaGananciaEnviada > 300000) {
@@ -876,7 +896,7 @@
             obtenerTasasAPI();
         });
 
-        [inputBCV, inputP2P, inputMonto].forEach(input => {
+        [inputBCV, inputP2P, inputMonto, inputSaldoBsUsuario].forEach(input => {
             input.addEventListener('input', () => {
                 calcularSimulacion();
             });
