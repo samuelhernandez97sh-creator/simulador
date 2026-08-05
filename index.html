@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal de Arbitraje Pro | TradingView Style</title>
+    <title>Terminal de Arbitraje Pro | TradingView Candlestick</title>
     <!-- Incluyendo Lightweight Charts de TradingView -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -292,7 +292,7 @@
         .bank-amount { color: #60a5fa; }
         .binance-amount { color: #34d399; }
 
-        /* Panel Derecho: Gráfico TradingView y Telegram */
+        /* Panel Derecho: Ganancias y Estadísticas */
         .profit-card {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), var(--bg-element));
             border-radius: 12px;
@@ -387,7 +387,7 @@
         .stat-val.max { color: var(--accent-green); }
         .stat-val.min { color: var(--accent-red); }
 
-        /* Estilo TradingView Chart Container */
+        /* Estilo TradingView Chart Container (Velas Japonesas) */
         .tv-chart-container {
             background: var(--bg-element);
             border: 1px solid var(--border-color);
@@ -667,7 +667,7 @@
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: GRÁFICO TRADINGVIEW Y TELEGRAM ABAJO -->
+            <!-- COLUMNA DERECHA: GRÁFICO DE VELAS Y TELEGRAM ABAJO -->
             <div class="column">
                 <div class="profit-card">
                     <div class="profit-header">
@@ -700,10 +700,10 @@
                     </div>
                 </div>
 
-                <!-- GRÁFICO TIPO TRADINGVIEW CON CAMBIO DE TEMPORALIDAD -->
+                <!-- GRÁFICO TIPO TRADINGVIEW (VELAS JAPONESAS - PRECIO BINANCE P2P) -->
                 <div class="tv-chart-container">
                     <div class="tv-toolbar">
-                        <span class="tv-title">Margen Neto (Histórico TV)</span>
+                        <span class="tv-title">Precio P2P Binance (Velas Japonesas)</span>
                         <div class="tv-timeframes">
                             <button class="tf-btn active" data-tf="1M">1M</button>
                             <button class="tf-btn" data-tf="5M">5M</button>
@@ -754,8 +754,8 @@
         const TELEGRAM_CHAT_ID = '304678344';
         
         let tvChart = null;
-        let tvAreaSeries = null;
-        let historialCompleto = JSON.parse(localStorage.getItem('tv_historial_margen')) || generarDatosInicialesFicticios();
+        let tvCandleSeries = null;
+        let historialCandles = JSON.parse(localStorage.getItem('tv_historial_candles')) || generarVelasInicialesFicticias();
         let temporalidadActual = '1M';
         let registroHistorico = JSON.parse(localStorage.getItem('historial_bancos_p2p')) || [];
         
@@ -801,15 +801,25 @@
             return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
         }
 
-        function generarDatosInicialesFicticios() {
-            const datos = [];
+        function generarVelasInicialesFicticias() {
+            const velas = [];
             let tiempoBase = Math.floor(Date.now() / 1000) - (30 * 60);
-            let valorBase = 3.5;
+            let precioBase = 840.0;
             for (let i = 0; i < 30; i++) {
-                valorBase += (Math.random() * 0.4 - 0.2);
-                datos.push({ time: tiempoBase + (i * 60), value: parseFloat(valorBase.toFixed(2)) });
+                let open = precioBase;
+                let close = open + (Math.random() * 2.0 - 1.0);
+                let high = Math.max(open, close) + Math.random() * 0.8;
+                let low = Math.min(open, close) - Math.random() * 0.8;
+                velas.push({
+                    time: tiempoBase + (i * 60),
+                    open: parseFloat(open.toFixed(2)),
+                    high: parseFloat(high.toFixed(2)),
+                    low: parseFloat(low.toFixed(2)),
+                    close: parseFloat(close.toFixed(2))
+                });
+                precioBase = close;
             }
-            return datos;
+            return velas;
         }
 
         async function enviarNotificacionTelegram(texto) {
@@ -1018,7 +1028,9 @@
                 }
             }
 
-            actualizarPuntoNuevoGrafica(porcentajeGanancia);
+            if (TasaP2P > 0) {
+                actualizarVelaBinance(TasaP2P);
+            }
         }
 
         async function obtenerTasasAPI() {
@@ -1055,7 +1067,7 @@
             }
         }
 
-        /* CONFIGURACIÓN GRÁFICO TRADINGVIEW LIGHTWEIGHT CHARTS */
+        /* CONFIGURACIÓN GRÁFICO TRADINGVIEW VELAS JAPONESAS */
         function inicializarGraficaTradingView() {
             const container = document.getElementById('tradingview-chart');
             container.innerHTML = '';
@@ -1084,11 +1096,12 @@
                 },
             });
 
-            tvAreaSeries = tvChart.addAreaSeries({
-                topColor: 'rgba(16, 185, 129, 0.4)',
-                bottomColor: 'rgba(16, 185, 129, 0.0)',
-                lineColor: '#10b981',
-                lineWidth: 2,
+            tvCandleSeries = tvChart.addCandlestickSeries({
+                upColor: '#10b981',
+                downColor: '#ef4444',
+                borderVisible: false,
+                wickUpColor: '#10b981',
+                wickDownColor: '#ef4444',
             });
 
             filtrarYActualizarGrafica();
@@ -1099,7 +1112,7 @@
         }
 
         function filtrarYActualizarGrafica() {
-            if (!tvAreaSeries) return;
+            if (!tvCandleSeries) return;
             const ahoraSecs = Math.floor(Date.now() / 1000);
             let segundosAtras = 1800; // 1M por defecto
 
@@ -1108,27 +1121,35 @@
             else if (temporalidadActual === '1H') segundosAtras = 3600;
 
             const corteTiempo = ahoraSecs - segundosAtras;
-            const datosFiltrados = historialCompleto.filter(item => item.time >= corteTiempo);
+            const datosFiltrados = historialCandles.filter(item => item.time >= corteTiempo);
 
-            tvAreaSeries.setData(datosFiltrados);
+            tvCandleSeries.setData(datosFiltrados);
             tvChart.timeScale().fitContent();
         }
 
-        function actualizarPuntoNuevoGrafica(margenActual) {
-            if (isNaN(margenActual)) return;
+        function actualizarVelaBinance(nuevoPrecio) {
+            if (isNaN(nuevoPrecio)) return;
             const tiempoActual = Math.floor(Date.now() / 1000);
 
-            const ultimoPunto = historialCompleto[historialCompleto.length - 1];
-            if (ultimoPunto && (tiempoActual - ultimoPunto.time < 30)) {
-                ultimoPunto.value = parseFloat(margenActual.toFixed(2));
-                if (tvAreaSeries) tvAreaSeries.update(ultimoPunto);
+            const ultimaVela = historialCandles[historialCandles.length - 1];
+            if (ultimaVela && (tiempoActual - ultimaVela.time < 30)) {
+                ultimaVela.close = parseFloat(nuevoPrecio.toFixed(2));
+                if (nuevoPrecio > ultimaVela.high) ultimaVela.high = parseFloat(nuevoPrecio.toFixed(2));
+                if (nuevoPrecio < ultimaVela.low) ultimaVela.low = parseFloat(nuevoPrecio.toFixed(2));
+                if (tvCandleSeries) tvCandleSeries.update(ultimaVela);
             } else {
-                const nuevoPunto = { time: tiempoActual, value: parseFloat(margenActual.toFixed(2)) };
-                historialCompleto.push(nuevoPunto);
-                if (historialCompleto.length > 300) historialCompleto.shift();
-                if (tvAreaSeries) tvAreaSeries.update(nuevoPunto);
+                const nuevaVela = {
+                    time: tiempoActual,
+                    open: parseFloat(nuevoPrecio.toFixed(2)),
+                    high: parseFloat(nuevoPrecio.toFixed(2)),
+                    low: parseFloat(nuevoPrecio.toFixed(2)),
+                    close: parseFloat(nuevoPrecio.toFixed(2))
+                };
+                historialCandles.push(nuevaVela);
+                if (historialCandles.length > 300) historialCandles.shift();
+                if (tvCandleSeries) tvCandleSeries.update(nuevaVela);
             }
-            localStorage.setItem('tv_historial_margen', JSON.stringify(historialCompleto));
+            localStorage.setItem('tv_historial_candles', JSON.stringify(historialCandles));
         }
 
         [inputBCV, inputP2P, inputMonto, inputSaldoBsUsuario].forEach(input => {
