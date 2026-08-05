@@ -3,878 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Arbitraje Pro</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: #0b0f17;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            background-color: #151b26;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 500px;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
-            transition: max-width 0.3s ease;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #2d3748;
-            padding-bottom: 12px;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .header-status-box {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-        }
-
-        .last-update-time {
-            font-size: 10px;
-            color: #a0aec0;
-            font-family: monospace;
-        }
-
-        .main-layout {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .column {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .row-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .input-group {
-            background-color: #1f2736;
-            border-radius: 8px;
-            padding: 10px 14px;
-            border: 1px solid #2d3748;
-        }
-
-        .input-group.full-width {
-            grid-column: span 2;
-        }
-
-        .input-label {
-            font-size: 11px;
-            color: #a0aec0;
-            margin-bottom: 4px;
-            display: block;
-        }
-
-        .input-wrapper {
-            display: flex;
-            align-items: center;
-        }
-
-        .input-prefix {
-            font-size: 14px;
-            color: #718096;
-            margin-right: 8px;
-            font-weight: 500;
-        }
-
-        .input-field {
-            background: transparent;
-            border: none;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: bold;
-            width: 100%;
-            text-align: right;
-            outline: none;
-        }
-
-        .commission-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .com-btn {
-            background-color: #151b26;
-            color: #a0aec0;
-            border: 1px solid #2d3748;
-            padding: 6px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .com-btn.active {
-            background-color: #3182ce;
-            color: white;
-            border-color: #3182ce;
-        }
-
-        .notif-panel {
-            background: #1f2736;
-            border: 1px solid #2d3748;
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .banks-status-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .bank-badge-box {
-            background: #151b26;
-            border: 1px solid #2d3748;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-        }
-
-        .bank-badge-title {
-            font-size: 10px;
-            color: #a0aec0;
-            margin-bottom: 2px;
-            font-weight: bold;
-        }
-
-        .bank-status-val {
-            font-size: 11px;
-            font-weight: bold;
-            color: #f87171;
-        }
-        .bank-status-val.open {
-            color: #34d399;
-        }
-
-        .last-msg-box {
-            background: #151b26;
-            border: 1px solid #2d3748;
-            padding: 8px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 11px;
-            color: #e2e8f0;
-            max-height: 60px;
-            overflow-y: auto;
-            word-break: break-word;
-        }
-
-        .history-box {
-            background: #151b26;
-            border: 1px solid #2d3748;
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            max-height: 90px;
-            overflow-y: auto;
-            color: #cbd5e0;
-        }
-
-        .notif-btn {
-            background: #3182ce;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-        }
-
-        .timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            padding-left: 4px;
-        }
-
-        .timeline-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .icon-circle {
-            width: 30px;
-            height: 30px;
-            background-color: #1f2736;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 13px;
-            color: #a0aec0;
-        }
-
-        .timeline-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .timeline-title {
-            font-size: 11px;
-            color: #a0aec0;
-        }
-
-        .timeline-title span {
-            background-color: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 9px;
-            margin-left: 4px;
-        }
-
-        .timeline-value {
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 2px;
-        }
-
-        .bottom-results-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-
-        .bank-card {
-            background-color: #1a2438;
-            border-left: 4px solid #3182ce;
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .binance-card {
-            background-color: #142421;
-            border-left: 4px solid #10b981;
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .bank-title {
-            font-size: 10px;
-            font-weight: bold;
-            color: #4299e1;
-            display: block;
-        }
-
-        .binance-title {
-            font-size: 10px;
-            font-weight: bold;
-            color: #34d399;
-            display: block;
-        }
-
-        .bank-subtitle, .binance-subtitle {
-            font-size: 9px;
-            color: #718096;
-            margin-top: 2px;
-            display: block;
-        }
-
-        .bank-amount, .binance-amount {
-            font-size: 15px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        .bank-amount { color: #4299e1; }
-        .binance-amount { color: #34d399; }
-
-        .profit-card {
-            background-color: #142421;
-            border-radius: 8px;
-            padding: 14px;
-            border: 1px solid rgba(16, 185, 129, 0.1);
-        }
-
-        .profit-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .profit-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #10b981;
-        }
-
-        .profit-pct {
-            background-color: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 2px 8px;
-            border-radius: 6px;
-        }
-
-        .profit-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .profit-sub-title {
-            font-size: 10px;
-            color: #718096;
-            margin-bottom: 2px;
-        }
-
-        .profit-sub-value {
-            font-size: 15px;
-            font-weight: bold;
-            color: #10b981;
-        }
-
-        .panel-stats, .panel-chart {
-            background: #1f2736;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #2d3748;
-        }
-
-        .panel-title-sec {
-            color: #fff;
-            margin-bottom: 8px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            text-align: center;
-        }
-        .stat-box {
-            background: #151b26;
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid #2d3748;
-        }
-        .stat-label {
-            font-size: 9px;
-            color: #a0aec0;
-            margin-bottom: 2px;
-        }
-        .stat-val {
-            font-size: 13px;
-            font-weight: bold;
-        }
-        .stat-val.max { color: #34d399; }
-        .stat-val.min { color: #f87171; }
-
-        .floating-alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-150%);
-            background-color: #10b981;
-            color: white;
-            padding: 14px 20px;
-            border-radius: 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            z-index: 1000;
-            font-weight: bold;
-            text-align: center;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: 90%;
-            max-width: 400px;
-            font-size: 13px;
-        }
-
-        .floating-alert.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        @media (min-width: 900px) {
-            .container {
-                max-width: 950px;
-            }
-            .main-layout {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 24px;
-                align-items: start;
-            }
-            .bottom-results-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-    </style>
+    <title>Simulador P2P y Arbitraje</title>
+    <!-- Tailwind CSS o estilos base si los usas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased p-4">
 
-    <audio id="audioAlerta" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Encabezado -->
+        <header class="flex justify-between items-center border-b border-slate-800 pb-4">
+            <h1 class="text-xl font-bold text-emerald-400">Simulador de Arbitraje P2P</h1>
+            <span id="txtUltimaHora" class="text-xs text-slate-400">Actualizando...</span>
+        </header>
 
-    <div id="alert-flotante" class="floating-alert">
-        🚨 ¡INTERVENCIÓN ACTIVA DETECTADA! 🚨
-    </div>
-
-    <div class="container">
-        <div class="header">
-            <h1>Simulador</h1>
-            <div class="header-status-box">
-                <span id="txt-ultima-hora" class="last-update-time">Actualizado: --:--:--</span>
+        <!-- Panel de Inputs / Configuración -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Monto USD (Tarjeta)</label>
+                <input type="number" id="inputMonto" value="500" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Tasa BCV</label>
+                <input type="number" step="0.01" id="inputBCV" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Tasa Binance P2P</label>
+                <input type="number" step="0.01" id="inputP2P" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Saldo Bs Usuario</label>
+                <input type="number" id="inputSaldoBsUsuario" value="0" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white">
             </div>
         </div>
 
-        <div class="main-layout">
-            
-            <!-- COLUMNA IZQUIERDA -->
-            <div class="column">
-                <div class="notif-panel">
-                    <div style="font-weight: bold; color: #cbd5e0; display:flex; justify-content:space-between; align-items:center;">
-                        <span>📡 Monitoreo Canal Telegram</span>
-                    </div>
-                    
-                    <div class="banks-status-grid">
-                        <div class="bank-badge-box">
-                            <div class="bank-badge-title">BDV</div>
-                            <div id="status-bdv" class="bank-status-val">CERRADO</div>
-                        </div>
-                        <div class="bank-badge-box">
-                            <div class="bank-badge-title">TESORO (BT)</div>
-                            <div id="status-tesoro" class="bank-status-val">CERRADO</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div style="font-size: 10px; color: #a0aec0; margin-bottom: 2px;">Último mensaje recibido:</div>
-                        <div id="txt-ultimo-mensaje" class="last-msg-box">Esperando datos del canal...</div>
-                    </div>
-
-                    <div>
-                        <div style="font-size: 10px; color: #a0aec0; margin-bottom: 2px;">Historial de Aperturas / Cierres (Hoy):</div>
-                        <div id="log-historial" class="history-box">Sin registros aún...</div>
-                    </div>
-
-                    <button id="btn-permiso" class="notif-btn">Activar Alertas y Sonido</button>
+        <!-- Resultados del Cálculo / Pasos -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+                <h2 class="text-sm font-semibold text-slate-300">Desglose de Operación</h2>
+                <p class="text-xs text-slate-400" id="txtPaso3">$0.00 → 0.00 USDT</p>
+                <p class="text-xs text-slate-400" id="txtPaso4">0.00 USDT × Bs 0.00 = Bs 0.00</p>
+                <div class="pt-2 border-t border-slate-700 flex justify-between">
+                    <span class="text-sm">Costo Total Banco:</span>
+                    <span id="txtMontoBanco" class="font-bold text-rose-400">Bs 0,00</span>
                 </div>
-
-                <div class="row-inputs">
-                    <div class="input-group">
-                        <label class="input-label">Tasa BCV Oficial</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="tasa-bcv" class="input-field" step="0.01" value="0.00">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">Tasa P2P Binance</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="tasa-p2p" class="input-field" step="0.01" value="0.00">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row-inputs">
-                    <div class="input-group full-width" style="background-color: #182336; border-color: #2b4c7e;">
-                        <label class="input-label" style="color: #63b3ed;">💰 Mi saldo en Bolívares (Disponibles)</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="saldo-bs-usuario" class="input-field" step="1" value="0" placeholder="Ej: 300000">
-                        </div>
-                        <div style="font-size: 11px; color: #90cdf4; margin-top: 4px; display: flex; justify-content: space-between;">
-                            <span>Equivalente a comprar:</span>
-                            <strong id="txt-usd-equivalente">$0,00 USD</strong>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label class="input-label">Monto a comprar (Base USD)</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">$</span>
-                            <input type="number" id="monto-compra" class="input-field" step="1" value="500">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">Comisión Tarjeta</label>
-                        <div class="commission-selector">
-                            <button class="com-btn active" data-fee="1.5">1.5%</button>
-                            <button class="com-btn" data-fee="2.5">2.5%</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="icon-circle">🏛️</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Compras USD a BCV + 0.5%</div>
-                            <div class="timeline-value" id="txt-paso1">$0,00 × Bs 0,00 = Bs 0,00</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="icon-circle">💳</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Recargas con tarjeta <span id="label-fee-tarjeta">-1.5%</span></div>
-                            <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="icon-circle">🔄</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Binance descuenta su comisión <span>-4.1%</span></div>
-                            <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="icon-circle">🔗</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Vendes USDT en P2P (Binance)</div>
-                            <div class="timeline-value" id="txt-paso4">0,00 USDT × Bs 0,00 = Bs 0,00</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bottom-results-grid">
-                    <div class="bank-card">
-                        <div>
-                            <span class="bank-title">MONTO A TENER EN EL BANCO</span>
-                            <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
-                        </div>
-                        <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
-                    </div>
-
-                    <div class="binance-card">
-                        <div>
-                            <span class="binance-title">MONTO A COLOCAR EN BINANCE</span>
-                            <span class="binance-subtitle">Capital neto tras comisión de tarjeta</span>
-                        </div>
-                        <div class="binance-amount" id="txt-monto-binance">$ 0,00</div>
-                    </div>
+                <div class="flex justify-between">
+                    <span class="text-sm">Monto Binance:</span>
+                    <span id="txtMontoBinance" class="font-bold text-blue-400">$ 0,00</span>
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA -->
-            <div class="column">
-                <div class="profit-card">
-                    <div class="profit-header">
-                        <span class="profit-title">📈 Ganancia estimada</span>
-                        <span class="profit-pct" id="txt-ganancia-pct">+0.00%</span>
-                    </div>
-                    <div class="profit-grid">
-                        <div>
-                            <div class="profit-sub-title">En bolívares</div>
-                            <div class="profit-sub-value" id="txt-ganancia-bs">Bs 0,00</div>
-                        </div>
-                        <div>
-                            <div class="profit-sub-title">En USDT</div>
-                            <div class="profit-sub-value" id="txt-ganancia-usdt">0,00 USDT</div>
-                        </div>
-                    </div>
+            <!-- Ganancias y Estadísticas -->
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+                <h2 class="text-sm font-semibold text-slate-300">Margen y Ganancia</h2>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400">Porcentaje:</span>
+                    <span id="txtGananciaPct" class="text-lg font-bold text-emerald-400">+0.00%</span>
                 </div>
-
-                <div class="panel-stats">
-                    <div class="panel-title-sec">Límites de la Sesión Actual</div>
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-label">Margen Máximo</div>
-                            <div class="stat-val max" id="stat-max">0.00%</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Margen Mínimo</div>
-                            <div class="stat-val min" id="stat-min">0.00%</div>
-                        </div>
-                    </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400">Ganancia en Bs:</span>
+                    <span id="txtGananciaBs" class="text-sm font-semibold">Bs 0,00</span>
                 </div>
-
-                <div class="panel-chart">
-                    <div class="panel-title-sec">Tendencia del Margen Neto (En Vivo)</div>
-                    <canvas id="canvasMargen" style="max-height: 140px;"></canvas>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400">Ganancia en USDT:</span>
+                    <span id="txtGananciaUSDT" class="text-sm font-semibold">0.00 USDT</span>
+                </div>
+                <div class="flex justify-between pt-2 border-t border-slate-700 text-xs text-slate-400">
+                    <span>Máx: <strong id="statMax" class="text-emerald-400">0%</strong></span>
+                    <span>Mín: <strong id="statMin" class="text-rose-400">0%</strong></span>
                 </div>
             </div>
+        </div>
 
+        <!-- Gráfica de Tendencia -->
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 h-64">
+            <canvas id="canvasMargen"></canvas>
         </div>
     </div>
 
     <script>
-        const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
-        const TELEGRAM_BOT_TOKEN = '8946597702:AAEzSTw_-rNIWEyUtISWAxrcumqdwbylKWI';
-        const TELEGRAM_CHAT_ID = '304678344';
-        
+        // Configuración de URLs y Variables Globales
+        const VERCEL_URL = ""; // Si tu frontend y backend están en el mismo dominio de Vercel, déjalo vacío o pon tu URL base.
+        let historialMargen = [];
         let miGrafica = null;
-        let historialMargen = JSON.parse(localStorage.getItem('historial_margen_p2p')) || [];
-        let registroHistorico = JSON.parse(localStorage.getItem('historial_bancos_p2p')) || [];
-        
         let maxMargenSession = -999;
         let minMargenSession = 999;
-        let comisionTarjetaSeleccionada = 1.5;
+
+        // Referencias del DOM
+        const inputMonto = document.getElementById('inputMonto');
+        const inputBCV = document.getElementById('inputBCV');
+        const inputP2P = document.getElementById('inputP2P');
+        const inputSaldoBsUsuario = document.getElementById('inputSaldoBsUsuario');
         
-        let estadoBdvAnterior = "";
-        let estadoTesoroAnterior = "";
-        let ultimaAlertaGananciaEnviada = 0;
-
-        const inputBCV = document.getElementById('tasa-bcv');
-        const inputP2P = document.getElementById('tasa-p2p');
-        const inputMonto = document.getElementById('monto-compra');
-        const inputSaldoBsUsuario = document.getElementById('saldo-bs-usuario');
-        const txtUsdEquivalente = document.getElementById('txt-usd-equivalente');
-
-        const txtUltimaHora = document.getElementById('txt-ultima-hora');
-        const btnPermiso = document.getElementById('btn-permiso');
-        const alertFlotante = document.getElementById('alert-flotante');
+        const txtPaso3 = document.getElementById('txtPaso3');
+        const txtPaso4 = document.getElementById('txtPaso4');
+        const txtMontoBanco = document.getElementById('txtMontoBanco');
+        const txtMontoBinance = document.getElementById('txtMontoBinance');
+        const txtGananciaPct = document.getElementById('txtGananciaPct');
+        const txtGananciaBs = document.getElementById('txtGananciaBs');
+        const txtGananciaUSDT = document.getElementById('txtGananciaUSDT');
         
-        const statusBdv = document.getElementById('status-bdv');
-        const statusTesoro = document.getElementById('status-tesoro');
-        const txtUltimoMensaje = document.getElementById('txt-ultimo-mensaje');
-        const logHistorial = document.getElementById('log-historial');
+        const statMax = document.getElementById('statMax');
+        const statMin = document.getElementById('statMin');
+        const txtUltimaHora = document.getElementById('txtUltimaHora');
 
-        const labelFeeTarjeta = document.getElementById('label-fee-tarjeta');
-        const audioAlerta = document.getElementById('audioAlerta');
-
-        const txtPaso1 = document.getElementById('txt-paso1');
-        const txtPaso2 = document.getElementById('txt-paso2');
-        const txtPaso3 = document.getElementById('txt-paso3');
-        const txtPaso4 = document.getElementById('txt-paso4');
-        const txtMontoBanco = document.getElementById('txt-monto-banco');
-        const txtMontoBinance = document.getElementById('txt-monto-binance');
-        const txtGananciaPct = document.getElementById('txt-ganancia-pct');
-        const txtGananciaBs = document.getElementById('txt-ganancia-bs');
-        const txtGananciaUSDT = document.getElementById('txt-ganancia-usdt');
-        
-        const statMax = document.getElementById('stat-max');
-        const statMin = document.getElementById('stat-min');
-
-        function formatVE(valor, decimales = 2) {
-            return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+        // Función auxiliar para formatear números al estilo venezolano
+        function formatVE(num) {
+            if (isNaN(num)) return "0,00";
+            return Number(num).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        async function enviarNotificacionTelegram(texto) {
-            try {
-                await fetch(`${VERCEL_URL}/api/send-telegram`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: TELEGRAM_BOT_TOKEN,
-                        chat_id: TELEGRAM_CHAT_ID,
-                        text: texto
-                    })
-                });
-            } catch (err) {
-                console.error("Error al enviar mensaje a Telegram:", err);
-            }
+        // Función para procesar alertas o mensajes del canal de Telegram (si aplica)
+        function procesarMensajeCanal(mensaje) {
+            console.log("Mensaje de canal detectado:", mensaje);
+            // Aquí puedes integrar lógica visual adicional si tu canal reporta caídas o estados de bancos.
         }
 
-        function registrarEnHistorial(textoAccion) {
-            const horaActual = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            registroHistorico.unshift(`[${horaActual}] ${textoAccion}`);
-            if (registroHistorico.length > 20) registroHistorico.pop();
-            localStorage.setItem('historial_bancos_p2p', JSON.stringify(registroHistorico));
-            actualizarVistaHistorial();
-        }
-
-        function actualizarVistaHistorial() {
-            if (registroHistorico.length === 0) {
-                logHistorial.innerHTML = "Sin registros aún...";
-                return;
-            }
-            logHistorial.innerHTML = registroHistorico.join('<br>');
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            actualizarVistaHistorial();
-            obtenerTasasAPI();
-        });
-
-        document.querySelectorAll('.com-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.com-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                comisionTarjetaSeleccionada = parseFloat(e.target.dataset.fee);
-                labelFeeTarjeta.textContent = `-${comisionTarjetaSeleccionada}%`;
-                calcularSimulacion();
-            });
-        });
-
-        btnPermiso.addEventListener('click', () => {
-            if (!("Notification" in window)) {
-                alert("Este navegador no soporta notificaciones.");
-                return;
-            }
-            Notification.requestPermission().then(permiso => {
-                if (permiso === "granted") {
-                    btnPermiso.textContent = "🔔 ¡Sistema Anti-Inactividad Activo!";
-                    btnPermiso.style.backgroundColor = "#10b981";
-                    audioAlerta.play().then(() => { audioAlerta.pause(); }).catch(e => {});
-                }
-            });
-        });
-
-        if (window.Notification && Notification.permission === "granted") {
-            btnPermiso.textContent = "🔔 ¡Sistema Anti-Inactividad Activo!";
-            btnPermiso.style.backgroundColor = "#10b981";
-        }
-
-        const workerCode = `
-            self.onmessage = function(e) {
-                if (e.data === 'start') {
-                    setInterval(() => {
-                        self.postMessage('tick');
-                    }, 10000);
-                }
-            };
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const worker = new Worker(URL.createObjectURL(blob));
-
-        worker.onmessage = function(e) {
-            if (e.data === 'tick') {
-                obtenerTasasAPI();
-            }
-        };
-        worker.postMessage('start');
-
-        function procesarMensajeCanal(textoUltimoMensaje) {
-            if (!textoUltimoMensaje) return;
-            txtUltimoMensaje.textContent = textoUltimoMensaje;
-            const textoUpper = textoUltimoMensaje.toUpperCase();
-
-            // --- DETECCIÓN BDV ---
-            const esBdv = textoUpper.includes("BDV");
-            if (esBdv) {
-                const bdvAbierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN DIGITAL");
-                const bdvCerrado = textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA");
-
-                if (bdvAbierto && !bdvCerrado) {
-                    statusBdv.textContent = "ABIERTO";
-                    statusBdv.className = "bank-status-val open";
-
-                    if (estadoBdvAnterior !== "ABIERTO") {
-                        registrarEnHistorial("🟢 BDV Abrió intervención");
-                        dispararAlertaVisualSonora("🚨 ¡BDV ABIERTO!", textoUltimoMensaje);
-                        enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN BDV ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                        estadoBdvAnterior = "ABIERTO";
-                    }
-                } else if (bdvCerrado) {
-                    statusBdv.textContent = "CERRADO";
-                    statusBdv.className = "bank-status-val";
-
-                    if (estadoBdvAnterior !== "CERRADO" && estadoBdvAnterior !== "") {
-                        registrarEnHistorial("🔴 BDV Cerró intervención");
-                        enviarNotificacionTelegram("🔴 *BDV CERRADO*\n\nEl sistema detectó el cierre de la intervención de BDV.");
-                    }
-                    estadoBdvAnterior = "CERRADO";
-                }
-            }
-
-            // --- DETECCIÓN TESORO (BT) ---
-            const esTesoro = textoUpper.includes("TESORO") || textoUpper.includes("BT");
-            if (esTesoro) {
-                const tesoroAbierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN");
-                const tesoroCerrado = textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA");
-
-                if (tesoroAbierto && !tesoroCerrado) {
-                    statusTesoro.textContent = "ABIERTO";
-                    statusTesoro.className = "bank-status-val open";
-
-                    if (estadoTesoroAnterior !== "ABIERTO") {
-                        registrarEnHistorial("🟢 TESORO Abrió intervención");
-                        dispararAlertaVisualSonora("🚨 ¡TESORO ABIERTO!", textoUltimoMensaje);
-                        enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN TESORO ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                        estadoTesoroAnterior = "ABIERTO";
-                    }
-                } else if (tesoroCerrado) {
-                    statusTesoro.textContent = "CERRADO";
-                    statusTesoro.className = "bank-status-val";
-
-                    if (estadoTesoroAnterior !== "CERRADO" && estadoTesoroAnterior !== "") {
-                        registrarEnHistorial("🔴 TESORO Cerró intervención");
-                        enviarNotificacionTelegram("🔴 *TESORO CERRADO*\n\nEl sistema detectó el cierre de la intervención del Tesoro.");
-                    }
-                    estadoTesoroAnterior = "CERRADO";
-                }
-            }
-        }
-
-        function dispararAlertaVisualSonora(titulo, subtitulo) {
-            alertFlotante.innerHTML = `${titulo}<br><span style="font-size:11px">${subtitulo}</span>`;
-            alertFlotante.classList.add('show');
-            setTimeout(() => alertFlotante.classList.remove('show'), 6000);
-
-            if (window.Notification && Notification.permission === "granted") {
-                new Notification(titulo, { body: subtitulo });
-            }
-            try {
-                audioAlerta.currentTime = 0;
-                audioAlerta.play();
-            } catch (err) {}
-        }
-
+        // Núcleo de cálculo del simulador
         function calcularSimulacion() {
-            const TasaBCV = parseFloat(inputBCV.value) || 0;
+            const montoTarjeta = parseFloat(inputMonto.value) || 0;
+            const tasaBCV = parseFloat(inputBCV.value) || 0;
             const TasaP2P = parseFloat(inputP2P.value) || 0;
-            const montoUSD = parseFloat(inputMonto.value) || 0;
-            const saldoBsUsuario = parseFloat(inputSaldoBsUsuario.value) || 0;
 
-            const tasaConComision = TasaBCV * 1.005;
-            if (tasaConComision > 0 && saldoBsUsuario > 0) {
-                const usdEquivalentes = saldoBsUsuario / tasaConComision;
-                txtUsdEquivalente.textContent = `$${formatVE(usdEquivalentes)} USD`;
-            } else {
-                txtUsdEquivalente.textContent = `$0,00 USD`;
-            }
-
-            const costoTotalBanco = montoUSD * tasaConComision;
-            const factorTarjeta = (100 - comisionTarjetaSeleccionada) / 100;
-            const montoTarjeta = montoUSD * factorTarjeta;
-            const montoUSDT = montoTarjeta * 0.959; 
+            // Fórmulas base del arbitraje
+            const costoTotalBanco = montoTarjeta * (tasaBCV * 1.005); // Ejemplo con comisión bancaria del 0.5%
+            const montoUSDT = montoTarjeta; // Asumiendo relación 1:1 inicial en tarjeta
             const ventaBolivares = montoUSDT * TasaP2P;
-
+            
             const gananciaBs = ventaBolivares - costoTotalBanco;
-            const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
-            const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
+            const gananciaUSDT = costoTotalBanco > 0 ? gananciaBs / TasaP2P - montoTarjeta : 0;
+            const porcentajeGanancia = costoTotalBanco > 0 ? ((ventaBolivares - costoTotalBanco) / costoTotalBanco) * 100 : 0;
 
-            txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
-            txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
+            // Actualizar interfaz visual
             txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
             txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(TasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
             
@@ -896,6 +156,7 @@
             }
         }
 
+        // Sincronización con las Serverless Functions de Vercel
         async function obtenerTasasAPI() {
             try {
                 const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
@@ -932,8 +193,9 @@
             }
         }
 
+        // Manejo de la Gráfica de Tendencias
         function actualizarGraficaTendencia() {
-            const margenActual = parseFloat(txtGananciaPct.textContent.replace('%', ''));
+            const margenActual = parseFloat(txtGananciaPct.textContent.replace('%', '').replace('+', ''));
             if (isNaN(margenActual)) return;
 
             const ahora = new Date();
@@ -943,19 +205,13 @@
             if (historialMargen.length > 15) historialMargen.shift();
 
             localStorage.setItem('historial_margen_p2p', JSON.stringify(historialMargen));
-
-            if (typeof Chart === 'undefined') {
-                const scriptChart = document.createElement('script');
-                scriptChart.src = "https://cdn.jsdelivr.net/npm/chart.js";
-                scriptChart.onload = () => renderizarGrafica();
-                document.head.appendChild(scriptChart);
-            } else {
-                renderizarGrafica();
-            }
+            renderizarGrafica();
         }
 
         function renderizarGrafica() {
             const canvas = document.getElementById('canvasMargen');
+            if(!canvas) return;
+            
             const labels = historialMargen.map(item => item.hora);
             const datos = historialMargen.map(item => item.margen);
 
@@ -991,10 +247,26 @@
             }
         }
 
+        // Event Listeners para inputs manuales
         [inputBCV, inputP2P, inputMonto, inputSaldoBsUsuario].forEach(input => {
             input.addEventListener('input', () => {
                 calcularSimulacion();
             });
+        });
+
+        // Inicialización al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            const historialGuardado = localStorage.getItem('historial_margen_p2p');
+            if (historialGuardado) {
+                try {
+                    historialMargen = JSON.parse(historialGuardado);
+                } catch (e) {
+                    historialMargen = [];
+                }
+            }
+
+            obtenerTasasAPI();
+            setInterval(obtenerTasasAPI, 30000); // Refresca cada 30 segundos
         });
     </script>
 </body>
