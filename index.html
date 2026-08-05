@@ -144,7 +144,6 @@
             border-color: #3182ce;
         }
 
-        /* Panel de monitoreo múltiple y último mensaje */
         .notif-panel {
             background: #1f2736;
             border: 1px solid #2d3748;
@@ -194,9 +193,9 @@
             font-family: monospace;
             font-size: 11px;
             color: #e2e8f0;
-            max-height: 50px;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            max-height: 60px;
+            overflow-y: auto;
+            word-break: break-word;
         }
 
         .history-box {
@@ -654,7 +653,6 @@
         let estadoTesoroAnterior = "";
         let ultimaAlertaGananciaEnviada = 0;
 
-        // Elementos DOM
         const inputBCV = document.getElementById('tasa-bcv');
         const inputP2P = document.getElementById('tasa-p2p');
         const inputMonto = document.getElementById('monto-compra');
@@ -761,7 +759,7 @@
                 if (e.data === 'start') {
                     setInterval(() => {
                         self.postMessage('tick');
-                    }, 20000);
+                    }, 10000);
                 }
             };
         `;
@@ -894,14 +892,6 @@
                 if (porcentajeGanancia < minMargenSession || minMargenSession === 999) {
                     minMargenSession = porcentajeGanancia;
                     statMin.textContent = `${minMargenSession >= 0 ? '+' : ''}${formatVE(minMargenSession)}%`;
-                }
-            }
-
-            if (porcentajeGanancia >= 11 && porcentajeGanancia <= 12) {
-                const ahoraMs = Date.now();
-                if (ahoraMs - ultimaAlertaGananciaEnviada > 300000) {
-                    enviarNotificacionTelegram(`📈 *¡ALERTA DE GANANCIA P2P!* 📈\n\nEl margen actual ha alcanzado *${formatVE(porcentajeGanancia)}%*.\nTasa P2P: Bs ${formatVE(TasaP2P)}\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
-                    ultimaAlertaGananciaEnviada = ahoraMs;
                 }
             }
         }
