@@ -895,19 +895,33 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
+        // Web Worker configurado para ejecutarse cada 1 segundo exacto incluso en segundo plano (pestaña oculta)
         const workerCode = `
             self.onmessage = function(e) {
                 if (e.data === 'start') {
-                    setInterval(() => { self.postMessage('tick'); }, 10000);
+                    setInterval(() => { self.postMessage('tick'); }, 1000);
                 }
             };
         `;
         const blob = new Blob([workerCode], { type: 'application/javascript' });
         const worker = new Worker(URL.createObjectURL(blob));
 
+        let contadorSegundosAPI = 0;
+
         worker.onmessage = function(e) {
             if (e.data === 'tick') {
-                obtenerTasasAPI();
+                // Actualización en tiempo real por cada segundo de la vela actual
+                const precioActual = parseFloat(inputP2P.value);
+                if (!isNaN(precioActual) && precioActual > 0) {
+                    actualizarVelaBinanceSegundoARegundo(precioActual);
+                }
+
+                // Consultar a la API cada 10 segundos en segundo plano para no saturar peticiones
+                contadorSegundosAPI++;
+                if (contadorSegundosAPI >= 10) {
+                    contadorSegundosAPI = 0;
+                    obtenerTasasAPI();
+                }
             }
         };
         worker.postMessage('start');
@@ -1132,14 +1146,41 @@
             const tiempoActual = Math.floor(Date.now() / 1000);
 
             const ultimaVela = historialCandles[historialCandles.length - 1];
-            if (ultimaVela && (tiempoActual - ultimaVela.time < 30)) {
+            if (ultimaVela && (tiempoActual - ultimaVela.time < 60)) {
                 ultimaVela.close = parseFloat(nuevoPrecio.toFixed(2));
                 if (nuevoPrecio > ultimaVela.high) ultimaVela.high = parseFloat(nuevoPrecio.toFixed(2));
                 if (nuevoPrecio < ultimaVela.low) ultimaVela.low = parseFloat(nuevoPrecio.toFixed(2));
                 if (tvCandleSeries) tvCandleSeries.update(ultimaVela);
             } else {
                 const nuevaVela = {
-                    time: tiempoActual,
+                    time: tiempoActual - (tiempoActual % 60),
+                    open: parseFloat(nuevoPrecio.toFixed(2)),
+                    high: parseFloat(nuevoPrecio.toFixed(2)),
+                    low: parseFloat(nuevoPrecio.toFixed(2)),
+                    close: parseFloat(nuevoPrecio.toFixed(2))
+                };
+                historialCandles.push(nuevaVela);
+                if (historialCandles.length > 300) historialCandles.shift();
+                if (tvCandleSeries) tvCandleSeries.update(nuevaVela);
+            }
+            localStorage.setItem('tv_historial_candles', JSON.stringify(historialCandles));
+        }
+
+        function actualizarVelaBinanceSegundoARegundo(nuevoPrecio) {
+            if (isNaN(nuevoPrecio)) return;
+            const tiempoActual = Math.floor(Date.now() / 1000);
+            const tiempoVela = tiempoActual - (tiempoActual % 60);
+
+            let ultimaVela = historialCandles[historialCandles.length - 1];
+
+            if (ultimaVela && ultimaVela.time === tiempoVela) {
+                ultimaVela.close = parseFloat(nuevoPrecio.toFixed(2));
+                if (nuevoPrecio > ultimaVela.high) ultimaVela.high = parseFloat(nuevoPrecio.toFixed(2));
+                if (nuevoPrecio < ultimaVela.low) ultimaVela.low = parseFloat(nuevoPrecio.toFixed(2));
+                if (tvCandleSeries) tvCandleSeries.update(ultimaVela);
+            } else {
+                const nuevaVela = {
+                    time: tiempoVela,
                     open: parseFloat(nuevoPrecio.toFixed(2)),
                     high: parseFloat(nuevoPrecio.toFixed(2)),
                     low: parseFloat(nuevoPrecio.toFixed(2)),
