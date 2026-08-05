@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Arbitraje Pro</title>
+    <title>Terminal de Arbitraje Pro | Venezuela</title>
     <style>
+        :root {
+            --bg-main: #090d16;
+            --bg-card: #111827;
+            --bg-element: #1a2234;
+            --border-color: #273449;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -13,23 +25,23 @@
         }
 
         body {
-            background-color: #0b0f17;
-            color: #ffffff;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
         }
 
         .container {
-            background-color: #151b26;
-            border-radius: 16px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
             width: 100%;
-            max-width: 500px;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
+            max-width: 520px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             transition: max-width 0.3s ease;
         }
 
@@ -37,27 +49,39 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #2d3748;
-            padding-bottom: 12px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
         }
 
         .header h1 {
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .header-status-box {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
+        .header h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
         }
 
         .last-update-time {
-            font-size: 10px;
-            color: #a0aec0;
+            font-size: 11px;
+            color: var(--text-muted);
             font-family: monospace;
+            background: var(--bg-element);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
 
         .main-layout {
@@ -79,10 +103,15 @@
         }
 
         .input-group {
-            background-color: #1f2736;
-            border-radius: 8px;
-            padding: 10px 14px;
-            border: 1px solid #2d3748;
+            background-color: var(--bg-element);
+            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.2s;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--accent-blue);
         }
 
         .input-group.full-width {
@@ -91,9 +120,12 @@
 
         .input-label {
             font-size: 11px;
-            color: #a0aec0;
-            margin-bottom: 4px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 6px;
             display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .input-wrapper {
@@ -102,10 +134,10 @@
         }
 
         .input-prefix {
-            font-size: 14px;
-            color: #718096;
+            font-size: 15px;
+            color: var(--text-muted);
             margin-right: 8px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .input-field {
@@ -113,7 +145,7 @@
             border: none;
             color: #ffffff;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
             width: 100%;
             text-align: right;
             outline: none;
@@ -127,11 +159,11 @@
         }
 
         .com-btn {
-            background-color: #151b26;
-            color: #a0aec0;
-            border: 1px solid #2d3748;
-            padding: 6px;
-            border-radius: 6px;
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
@@ -139,92 +171,104 @@
         }
 
         .com-btn.active {
-            background-color: #3182ce;
+            background-color: var(--accent-blue);
             color: white;
-            border-color: #3182ce;
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
+        /* Panel Telegram Profesional */
         .notif-panel {
-            background: #1f2736;
-            border: 1px solid #2d3748;
-            border-radius: 8px;
-            padding: 12px;
+            background: var(--bg-element);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
             font-size: 12px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .banks-status-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 10px;
         }
 
         .bank-badge-box {
-            background: #151b26;
-            border: 1px solid #2d3748;
-            padding: 8px;
-            border-radius: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
             text-align: center;
         }
 
         .bank-badge-title {
             font-size: 10px;
-            color: #a0aec0;
-            margin-bottom: 2px;
-            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         .bank-status-val {
             font-size: 11px;
-            font-weight: bold;
-            color: #f87171;
+            font-weight: 700;
+            color: var(--accent-red);
         }
         .bank-status-val.open {
-            color: #34d399;
+            color: var(--accent-green);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
         .last-msg-box {
-            background: #151b26;
-            border: 1px solid #2d3748;
-            padding: 8px;
-            border-radius: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
             font-family: monospace;
             font-size: 11px;
             color: #e2e8f0;
-            max-height: 60px;
+            max-height: 65px;
             overflow-y: auto;
             word-break: break-word;
+            line-height: 1.4;
         }
 
         .history-box {
-            background: #151b26;
-            border: 1px solid #2d3748;
-            padding: 8px;
-            border-radius: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
             font-size: 11px;
-            max-height: 90px;
+            max-height: 80px;
             overflow-y: auto;
-            color: #cbd5e0;
+            color: var(--text-muted);
+            line-height: 1.4;
         }
 
         .notif-btn {
-            background: #3182ce;
+            background: var(--accent-blue);
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px 14px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 12px;
             width: 100%;
+            transition: opacity 0.2s;
         }
+        .notif-btn:hover { opacity: 0.9; }
 
         .timeline {
             display: flex;
             flex-direction: column;
             gap: 14px;
-            padding-left: 4px;
+            background: var(--bg-element);
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            border-radius: 12px;
         }
 
         .timeline-item {
@@ -234,40 +278,45 @@
         }
 
         .icon-circle {
-            width: 30px;
-            height: 30px;
-            background-color: #1f2736;
+            width: 32px;
+            height: 32px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 13px;
-            color: #a0aec0;
+            flex-shrink: 0;
         }
 
         .timeline-content {
             display: flex;
             flex-direction: column;
+            width: 100%;
         }
 
         .timeline-title {
             font-size: 11px;
-            color: #a0aec0;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
         }
 
         .timeline-title span {
             background-color: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            padding: 1px 5px;
+            color: var(--accent-red);
+            padding: 1px 6px;
             border-radius: 4px;
             font-size: 9px;
-            margin-left: 4px;
+            font-weight: 600;
         }
 
         .timeline-value {
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 2px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 3px;
+            color: #ffffff;
         }
 
         .bottom-results-grid {
@@ -276,166 +325,173 @@
             gap: 10px;
         }
 
-        .bank-card {
-            background-color: #1a2438;
-            border-left: 4px solid #3182ce;
-            border-radius: 8px;
-            padding: 12px;
+        .bank-card, .binance-card {
+            border-radius: 10px;
+            padding: 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .bank-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), var(--bg-element));
+            border-left: 4px solid var(--accent-blue);
         }
 
         .binance-card {
-            background-color: #142421;
-            border-left: 4px solid #10b981;
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), var(--bg-element));
+            border-left: 4px solid var(--accent-green);
         }
 
         .bank-title {
             font-size: 10px;
-            font-weight: bold;
-            color: #4299e1;
-            display: block;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.5px;
         }
 
         .binance-title {
             font-size: 10px;
-            font-weight: bold;
+            font-weight: 700;
             color: #34d399;
-            display: block;
+            letter-spacing: 0.5px;
         }
 
         .bank-subtitle, .binance-subtitle {
-            font-size: 9px;
-            color: #718096;
+            font-size: 10px;
+            color: var(--text-muted);
             margin-top: 2px;
-            display: block;
         }
 
         .bank-amount, .binance-amount {
             font-size: 15px;
-            font-weight: bold;
-            white-space: nowrap;
+            font-weight: 700;
         }
-        .bank-amount { color: #4299e1; }
+        .bank-amount { color: #60a5fa; }
         .binance-amount { color: #34d399; }
 
         .profit-card {
-            background-color: #142421;
-            border-radius: 8px;
-            padding: 14px;
-            border: 1px solid rgba(16, 185, 129, 0.1);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), var(--bg-element));
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         .profit-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .profit-title {
             font-size: 12px;
-            font-weight: bold;
-            color: #10b981;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .profit-pct {
-            background-color: rgba(16, 185, 129, 0.15);
+            background-color: rgba(16, 185, 129, 0.2);
             color: #34d399;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
             border-radius: 6px;
         }
 
         .profit-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
         }
 
         .profit-sub-title {
             font-size: 10px;
-            color: #718096;
+            color: var(--text-muted);
             margin-bottom: 2px;
+            text-transform: uppercase;
         }
 
         .profit-sub-value {
-            font-size: 15px;
-            font-weight: bold;
-            color: #10b981;
+            font-size: 16px;
+            font-weight: 700;
+            color: #34d399;
         }
 
         .panel-stats, .panel-chart {
-            background: #1f2736;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #2d3748;
+            background: var(--bg-element);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
         }
 
         .panel-title-sec {
-            color: #fff;
-            margin-bottom: 8px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 10px;
             text-align: center;
         }
+        
         .stat-box {
-            background: #151b26;
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid #2d3748;
+            background: var(--bg-card);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
+        
         .stat-label {
             font-size: 9px;
-            color: #a0aec0;
+            color: var(--text-muted);
             margin-bottom: 2px;
+            text-transform: uppercase;
         }
+        
         .stat-val {
-            font-size: 13px;
-            font-weight: bold;
+            font-size: 14px;
+            font-weight: 700;
         }
-        .stat-val.max { color: #34d399; }
-        .stat-val.min { color: #f87171; }
+        .stat-val.max { color: var(--accent-green); }
+        .stat-val.min { color: var(--accent-red); }
 
         .floating-alert {
             position: fixed;
-            top: 20px;
+            top: 24px;
             left: 50%;
             transform: translateX(-50%) translateY(-150%);
-            background-color: #10b981;
+            background-color: var(--accent-green);
             color: white;
-            padding: 14px 20px;
-            border-radius: 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            padding: 14px 24px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
             z-index: 1000;
-            font-weight: bold;
+            font-weight: 700;
             text-align: center;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             width: 90%;
-            max-width: 400px;
+            max-width: 420px;
             font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .floating-alert.show {
             transform: translateX(-50%) translateY(0);
         }
 
-        @media (min-width: 900px) {
+        @media (min-width: 950px) {
             .container {
-                max-width: 950px;
+                max-width: 980px;
             }
             .main-layout {
                 display: grid;
@@ -459,9 +515,9 @@
 
     <div class="container">
         <div class="header">
-            <h1>Simulador</h1>
+            <h1>Terminal Arbitraje</h1>
             <div class="header-status-box">
-                <span id="txt-ultima-hora" class="last-update-time">Actualizado: --:--:--</span>
+                <span id="txt-ultima-hora" class="last-update-time">Actualizando...</span>
             </div>
         </div>
 
@@ -470,8 +526,8 @@
             <!-- COLUMNA IZQUIERDA -->
             <div class="column">
                 <div class="notif-panel">
-                    <div style="font-weight: bold; color: #cbd5e0; display:flex; justify-content:space-between; align-items:center;">
-                        <span>📡 Monitoreo Canal Telegram</span>
+                    <div style="font-weight: 700; color: #ffffff; display:flex; justify-content:space-between; align-items:center; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span>📡 Canal Telegram (Monitoreo)</span>
                     </div>
                     
                     <div class="banks-status-grid">
@@ -486,16 +542,16 @@
                     </div>
 
                     <div>
-                        <div style="font-size: 10px; color: #a0aec0; margin-bottom: 2px;">Último mensaje recibido:</div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase;">Último mensaje recibido:</div>
                         <div id="txt-ultimo-mensaje" class="last-msg-box">Esperando datos del canal...</div>
                     </div>
 
                     <div>
-                        <div style="font-size: 10px; color: #a0aec0; margin-bottom: 2px;">Historial de Aperturas / Cierres (Hoy):</div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase;">Historial de Aperturas (Hoy):</div>
                         <div id="log-historial" class="history-box">Sin registros aún...</div>
                     </div>
 
-                    <button id="btn-permiso" class="notif-btn">Activar Alertas y Sonido</button>
+                    <button id="btn-permiso" class="notif-btn">🔔 Activar Alertas y Sonido</button>
                 </div>
 
                 <div class="row-inputs">
@@ -516,20 +572,20 @@
                 </div>
 
                 <div class="row-inputs">
-                    <div class="input-group full-width" style="background-color: #182336; border-color: #2b4c7e;">
-                        <label class="input-label" style="color: #63b3ed;">💰 Mi saldo en Bolívares (Disponibles)</label>
+                    <div class="input-group full-width" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), var(--bg-element)); border-color: rgba(59, 130, 246, 0.3);">
+                        <label class="input-label" style="color: #60a5fa;">💰 Mi Saldo en Bolívares (Disponibles)</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">Bs</span>
                             <input type="number" id="saldo-bs-usuario" class="input-field" step="1" value="0" placeholder="Ej: 300000">
                         </div>
-                        <div style="font-size: 11px; color: #90cdf4; margin-top: 4px; display: flex; justify-content: space-between;">
+                        <div style="font-size: 11px; color: #93c5fd; margin-top: 6px; display: flex; justify-content: space-between;">
                             <span>Equivalente a comprar:</span>
                             <strong id="txt-usd-equivalente">$0,00 USD</strong>
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label class="input-label">Monto a comprar (Base USD)</label>
+                        <label class="input-label">Monto Base USD</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">$</span>
                             <input type="number" id="monto-compra" class="input-field" step="1" value="500">
@@ -562,14 +618,14 @@
                     <div class="timeline-item">
                         <div class="icon-circle">🔄</div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Binance descuenta su comisión <span>-4.1%</span></div>
+                            <div class="timeline-title">Comisión Binance P2P <span>-4.1%</span></div>
                             <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
                         </div>
                     </div>
                     <div class="timeline-item">
                         <div class="icon-circle">🔗</div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Vendes USDT en P2P (Binance)</div>
+                            <div class="timeline-title">Venta de USDT en Binance P2P</div>
                             <div class="timeline-value" id="txt-paso4">0,00 USDT × Bs 0,00 = Bs 0,00</div>
                         </div>
                     </div>
@@ -578,16 +634,16 @@
                 <div class="bottom-results-grid">
                     <div class="bank-card">
                         <div>
-                            <span class="bank-title">MONTO A TENER EN EL BANCO</span>
-                            <span class="bank-subtitle">Costo total compra BCV (+0.5%)</span>
+                            <span class="bank-title">MONTO REQUERIDO EN BANCO</span>
+                            <span class="bank-subtitle">Costo compra BCV (+0.5%)</span>
                         </div>
                         <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
                     </div>
 
                     <div class="binance-card">
                         <div>
-                            <span class="binance-title">MONTO A COLOCAR EN BINANCE</span>
-                            <span class="binance-subtitle">Capital neto tras comisión de tarjeta</span>
+                            <span class="binance-title">NETO A RECIBIR EN BINANCE</span>
+                            <span class="binance-subtitle">Capital tras comisiones</span>
                         </div>
                         <div class="binance-amount" id="txt-monto-binance">$ 0,00</div>
                     </div>
@@ -598,12 +654,12 @@
             <div class="column">
                 <div class="profit-card">
                     <div class="profit-header">
-                        <span class="profit-title">📈 Ganancia estimada</span>
+                        <span class="profit-title">📈 Ganancia Estimada</span>
                         <span class="profit-pct" id="txt-ganancia-pct">+0.00%</span>
                     </div>
                     <div class="profit-grid">
                         <div>
-                            <div class="profit-sub-title">En bolívares</div>
+                            <div class="profit-sub-title">En Bolívares</div>
                             <div class="profit-sub-value" id="txt-ganancia-bs">Bs 0,00</div>
                         </div>
                         <div>
@@ -614,7 +670,7 @@
                 </div>
 
                 <div class="panel-stats">
-                    <div class="panel-title-sec">Límites de la Sesión Actual</div>
+                    <div class="panel-title-sec">Métricas de la Sesión</div>
                     <div class="stats-grid">
                         <div class="stat-box">
                             <div class="stat-label">Margen Máximo</div>
@@ -628,8 +684,8 @@
                 </div>
 
                 <div class="panel-chart">
-                    <div class="panel-title-sec">Tendencia del Margen Neto (En Vivo)</div>
-                    <canvas id="canvasMargen" style="max-height: 140px;"></canvas>
+                    <div class="panel-title-sec">Tendencia del Margen (En Vivo)</div>
+                    <canvas id="canvasMargen" style="max-height: 150px;"></canvas>
                 </div>
             </div>
 
@@ -741,7 +797,7 @@
             }
             Notification.requestPermission().then(permiso => {
                 if (permiso === "granted") {
-                    btnPermiso.textContent = "🔔 ¡Sistema Anti-Inactividad Activo!";
+                    btnPermiso.textContent = "🔔 Sistema de Alertas Activo";
                     btnPermiso.style.backgroundColor = "#10b981";
                     audioAlerta.play().then(() => { audioAlerta.pause(); }).catch(e => {});
                 }
@@ -749,7 +805,7 @@
         });
 
         if (window.Notification && Notification.permission === "granted") {
-            btnPermiso.textContent = "🔔 ¡Sistema Anti-Inactividad Activo!";
+            btnPermiso.textContent = "🔔 Sistema de Alertas Activo";
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
@@ -835,7 +891,7 @@
         }
 
         function dispararAlertaVisualSonora(titulo, subtitulo) {
-            alertFlotante.innerHTML = `${titulo}<br><span style="font-size:11px">${subtitulo}</span>`;
+            alertFlotante.innerHTML = `${titulo}<br><span style="font-size:11px; font-weight: normal;">${subtitulo}</span>`;
             alertFlotante.classList.add('show');
             setTimeout(() => alertFlotante.classList.remove('show'), 6000);
 
@@ -927,7 +983,7 @@
                 
                 const ahora = new Date();
                 const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                txtUltimaHora.textContent = `Actualizado: ${horaActual}`;
+                txtUltimaHora.textContent = `Sync: ${horaActual}`;
             }
         }
 
@@ -971,10 +1027,11 @@
                             label: 'Margen %',
                             data: datos,
                             borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
                             borderWidth: 2,
-                            tension: 0.2,
-                            fill: true
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 2
                         }]
                     },
                     options: {
@@ -982,8 +1039,8 @@
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
-                            x: { ticks: { color: '#a0aec0', font: { size: 9 } }, grid: { color: '#2d3748' } },
-                            y: { ticks: { color: '#a0aec0', font: { size: 9 } }, grid: { color: '#2d3748' } }
+                            x: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#273449' } },
+                            y: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#273449' } }
                         }
                     }
                 });
