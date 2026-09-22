@@ -588,6 +588,24 @@
                     </div>
                 </div>
 
+                <!-- NUEVOS CAMPOS DE CONFIGURACIÓN DE ALERTAS PERSONALIZADAS -->
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label class="input-label">🎯 Tasa Objetivo Alarma</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">Bs</span>
+                            <input type="number" id="input-tasa-objetivo" class="input-field" step="0.01" value="0.00" placeholder="Ej: 850">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">📈 % Ganancia Alarma</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="input-pct-objetivo" class="input-field" step="0.1" value="5.0" placeholder="Ej: 5">
+                            <span class="input-prefix" style="margin-left:4px; font-size:14px;">%</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row-inputs">
                     <div class="input-group full-width" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), var(--bg-element)); border-color: rgba(59, 130, 246, 0.3);">
                         <label class="input-label" style="color: #60a5fa;">💰 Mi Saldo en Bolívares (Disponibles)</label>
@@ -766,10 +784,16 @@
         let estadoBdvAnterior = "";
         let estadoTesoroAnterior = "";
 
+        // Flags para control de alertas personalizadas y evitar spam en Telegram
+        let alertaPctEnviada = false;
+        let alertaTasaEnviada = false;
+
         const inputBCV = document.getElementById('tasa-bcv');
         const inputP2P = document.getElementById('tasa-p2p');
         const inputMonto = document.getElementById('monto-compra');
         const inputSaldoBsUsuario = document.getElementById('saldo-bs-usuario');
+        const inputTasaObjetivo = document.getElementById('input-tasa-objetivo');
+        const inputPctObjetivo = document.getElementById('input-pct-objetivo');
         const txtUsdEquivalente = document.getElementById('txt-usd-equivalente');
 
         const txtUltimaHora = document.getElementById('txt-ultima-hora');
@@ -895,7 +919,7 @@
             btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Web Worker configurado para ejecutarse cada 1 segundo exacto incluso en segundo plano (pestaña oculta)
+        // Web Worker configurado para ejecutarse cada 1 segundo exacto
         const workerCode = `
             self.onmessage = function(e) {
                 if (e.data === 'start') {
@@ -910,13 +934,11 @@
 
         worker.onmessage = function(e) {
             if (e.data === 'tick') {
-                // Actualización en tiempo real por cada segundo de la vela actual
                 const precioActual = parseFloat(inputP2P.value);
                 if (!isNaN(precioActual) && precioActual > 0) {
                     actualizarVelaBinanceSegundoARegundo(precioActual);
                 }
 
-                // Consultar a la API cada 10 segundos en segundo plano para no saturar peticiones
                 contadorSegundosAPI++;
                 if (contadorSegundosAPI >= 5) {
                     contadorSegundosAPI = 0;
@@ -1019,6 +1041,33 @@
             const gananciaBs = ventaBolivares - costoTotalBanco;
             const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
             const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
+
+            // --- EVALUACIÓN DE ALERTAS PERSONALIZADAS ---
+            const pctObjetivoUser = parseFloat(inputPctObjetivo.value) || 5.0;
+            const tasaObjetivoUser = parseFloat(inputTasaObjetivo.value) || 0;
+
+            // 1. Alerta por Porcentaje de Ganancia
+            if (porcentajeGanancia >= pctObjetivoUser) {
+                if (!alertaPctEnviada) {
+                    enviarNotificacionTelegram(`🚀 *¡GANANCIA OBJETIVO ALCANZADA!* 🚀\n\nEl margen subió a *+${porcentajeGanancia.toFixed(2)}%*.\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
+                    dispararAlertaVisualSonora(`🚨 ¡GANANCIA DEL ${porcentajeGanancia.toFixed(1)}%!`, "Revisa Telegram para comprar.");
+                    alertaPctEnviada = true;
+                }
+            } else {
+                alertaPctEnviada = false; // Se reinicia si baja del porcentaje
+            }
+
+            // 2. Alerta por Tasa P2P Deseada
+            if (tasaObjetivoUser > 0 && TasaP2P >= tasaObjetivoUser) {
+                if (!alertaTasaEnviada) {
+                    enviarNotificacionTelegram(`🎯 *¡TASA OBJETIVO ALCANZADA!* 🎯\n\nEl precio P2P llegó a *Bs ${formatVE(TasaP2P)}* (Tu meta era: Bs ${formatVE(tasaObjetivoUser)}).`);
+                    dispararAlertaVisualSonora(`🎯 ¡TASA P2P EN Bs ${formatVE(TasaP2P)}!`, "Meta alcanzada. ¡Hora de comprar!");
+                    alertaTasaEnviada = true;
+                }
+            } else {
+                alertaTasaEnviada = false; // Se reinicia si el precio vuelve a bajar
+            }
+            // --------------------------------------------
 
             txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
             txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
@@ -1193,7 +1242,7 @@
             localStorage.setItem('tv_historial_candles', JSON.stringify(historialCandles));
         }
 
-        [inputBCV, inputP2P, inputMonto, inputSaldoBsUsuario].forEach(input => {
+        [inputBCV, inputP2P, inputMonto, inputSaldoBsUsuario, inputTasaObjetivo, inputPctObjetivo].forEach(input => {
             input.addEventListener('input', () => {
                 calcularSimulacion();
             });
