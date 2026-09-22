@@ -918,7 +918,7 @@
 
                 // Consultar a la API cada 10 segundos en segundo plano para no saturar peticiones
                 contadorSegundosAPI++;
-                if (contadorSegundosAPI >= 10) {
+                if (contadorSegundosAPI >= 5) {
                     contadorSegundosAPI = 0;
                     obtenerTasasAPI();
                 }
