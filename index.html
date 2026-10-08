@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal de Arbitraje Pro | TradingView Candlestick</title>
-    <!-- Incluyendo Lightweight Charts de TradingView -->
+    <title>Terminal de Arbitraje Pro | Intervención & P2P</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         :root {
             --bg-main: #0b0f19;
             --bg-card: #131b2e;
@@ -18,1235 +21,711 @@
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            width: 100%;
-            max-width: 1100px;
-            padding: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 14px;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header h1::before {
-            content: '';
-            display: inline-block;
-            width: 9px;
-            height: 9px;
-            background-color: var(--accent-green);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent-green);
-        }
-
-        .last-update-time {
-            font-size: 11px;
-            color: var(--text-muted);
-            font-family: monospace;
-            background: var(--bg-element);
-            padding: 5px 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-        }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        @media (min-width: 950px) {
-            .main-layout {
-                grid-template-columns: 1fr 1.1fr;
-                gap: 24px;
-            }
-        }
-
-        .column {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .row-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .input-group {
-            background-color: var(--bg-element);
-            border-radius: 12px;
-            padding: 12px 14px;
-            border: 1px solid var(--border-color);
-            transition: border-color 0.2s;
-        }
-
-        .input-group:focus-within {
-            border-color: var(--accent-blue);
-        }
-
-        .input-group.full-width {
-            grid-column: span 2;
-        }
-
-        .input-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .input-wrapper {
-            display: flex;
-            align-items: center;
-        }
-
-        .input-prefix {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-right: 8px;
-            font-weight: 600;
-        }
-
-        .input-field {
-            background: transparent;
-            border: none;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 700;
-            width: 100%;
-            text-align: right;
-            outline: none;
-        }
-
-        .commission-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .com-btn {
-            background-color: var(--bg-card);
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-            padding: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .com-btn.active {
-            background-color: var(--accent-blue);
-            color: white;
-            border-color: var(--accent-blue);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        /* Timeline / Pasos de Arbitraje */
-        .timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: var(--bg-element);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            border-radius: 12px;
-        }
-
-        .timeline-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .icon-circle {
-            width: 32px;
-            height: 32px;
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 13px;
-            flex-shrink: 0;
-        }
-
-        .timeline-content {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .timeline-title {
-            font-size: 10px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            text-transform: uppercase;
-        }
-
-        .timeline-title span {
-            background-color: rgba(239, 68, 68, 0.15);
-            color: var(--accent-red);
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-size: 9px;
-            font-weight: 600;
-        }
-
-        .timeline-value {
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 2px;
-            color: #ffffff;
-        }
-
-        .bottom-results-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .bank-card, .binance-card {
-            border-radius: 12px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border-color);
-        }
-
-        .bank-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), var(--bg-element));
-            border-left: 4px solid var(--accent-blue);
-        }
-
-        .binance-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), var(--bg-element));
-            border-left: 4px solid var(--accent-green);
-        }
-
-        .bank-title, .binance-title {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        .bank-title { color: #60a5fa; }
-        .binance-title { color: #34d399; }
-
-        .bank-subtitle, .binance-subtitle {
-            font-size: 9px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .bank-amount, .binance-amount {
-            font-size: 14px;
-            font-weight: 700;
-        }
-        .bank-amount { color: #60a5fa; }
-        .binance-amount { color: #34d399; }
-
-        /* Panel Derecho: Ganancias y Estadísticas */
-        .profit-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), var(--bg-element));
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .profit-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .profit-title {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent-green);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .profit-pct {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 6px;
-        }
-
-        .profit-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .profit-sub-title {
-            font-size: 9px;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-            text-transform: uppercase;
-        }
-
-        .profit-sub-value {
-            font-size: 15px;
-            font-weight: 700;
-            color: #34d399;
-        }
-
-        .panel-stats {
-            background: var(--bg-element);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .panel-title-sec {
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            text-align: center;
-        }
-        
-        .stat-box {
-            background: var(--bg-card);
-            padding: 6px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        
-        .stat-label {
-            font-size: 9px;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-            text-transform: uppercase;
-        }
-        
-        .stat-val {
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .stat-val.max { color: var(--accent-green); }
-        .stat-val.min { color: var(--accent-red); }
-
-        /* Estilo TradingView Chart Container (Velas Japonesas) */
-        .tv-chart-container {
-            background: var(--bg-element);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .tv-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .tv-title {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .tv-timeframes {
-            display: flex;
-            gap: 4px;
-        }
-
-        .tf-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            font-size: 10px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tf-btn.active {
-            background: var(--accent-blue);
-            color: white;
-            border-color: var(--accent-blue);
-        }
-
-        #tradingview-chart {
-            width: 100%;
-            height: 220px;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        /* Panel Telegram Abajo del Gráfico */
-        .notif-panel {
-            background: var(--bg-element);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 14px;
-            font-size: 11px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .banks-status-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .bank-badge-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 8px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .bank-badge-title {
-            font-size: 9px;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .bank-status-val {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent-red);
-        }
-        .bank-status-val.open {
-            color: var(--accent-green);
-            text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-        }
-
-        .last-msg-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 10px;
-            color: #e2e8f0;
-            max-height: 55px;
-            overflow-y: auto;
-            word-break: break-word;
-            line-height: 1.4;
-        }
-
-        .history-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 10px;
-            max-height: 70px;
-            overflow-y: auto;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-
-        .notif-btn {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 11px;
-            width: 100%;
-            transition: opacity 0.2s;
-        }
-        .notif-btn:hover { opacity: 0.9; }
-
-        .floating-alert {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-150%);
-            background-color: var(--accent-green);
-            color: white;
-            padding: 14px 24px;
-            border-radius: 12px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-            z-index: 1000;
-            font-weight: 700;
-            text-align: center;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: 90%;
-            max-width: 400px;
-            font-size: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .floating-alert.show {
-            transform: translateX(-50%) translateY(0);
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-    <audio id="audioAlerta" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
-
-    <div id="alert-flotante" class="floating-alert">
-        🚨 ¡INTERVENCIÓN ACTIVA DETECTADA! 🚨
-    </div>
-
-    <div class="container">
-        <div class="header">
-            <h1>Terminal Arbitraje Pro</h1>
-            <div class="header-status-box">
-                <span id="txt-ultima-hora" class="last-update-time">Sync: --:--:--</span>
+    <header class="bg-[#0f172a] border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Branding / Logo -->
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2.5 rounded-xl font-bold text-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                        Terminal Arbitraje Pro 
+                        <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">v2.6</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Sistema Integral: Intervención Cambiaria & Binance P2P Venezuela</p>
+                </div>
             </div>
+
+            <!-- Navigation Buttons: INTERVENCION & ARBITRAJE -->
+            <div class="flex items-center gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+                <button onclick="switchTab('intervencion')" id="nav-intervencion" class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow-md">
+                    <i class="fa-solid fa-building-columns"></i> INTERVENCIÓN
+                </button>
+                <button onclick="switchTab('arbitraje')" id="nav-arbitraje" class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-arrows-split-up-and-left"></i> ARBITRAJE P2P
+                </button>
+            </div>
+
+            <!-- Global Status Bar -->
+            <div class="flex items-center gap-3 text-xs">
+                <div class="text-right">
+                    <span class="text-slate-400 block text-[10px]">Tasa BCV Of.</span>
+                    <span id="headerBcv" class="font-bold text-emerald-400">Bs. 879,10</span>
+                </div>
+                <div class="border-l border-slate-800 pl-3 text-right">
+                    <span class="text-slate-400 block text-[10px]">Sync API</span>
+                    <span id="syncClock" class="font-bold text-slate-300">01:42:22 p.m.</span>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: INTERVENCIÓN -->
+        <!-- ========================================== -->
+        <div id="tab-intervencion" class="space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Panel Izquierdo: Tasas y Simulador Intervención -->
+                <div class="lg:col-span-1 space-y-6">
+                    
+                    <!-- Tarjetas de Tasas -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg">
+                            <span class="text-[10px] text-slate-400 font-semibold block uppercase">Tasa BCV Oficial</span>
+                            <div class="text-xl font-bold text-white mt-1" id="dashBcvRate">879,10</div>
+                            <span class="text-[10px] text-slate-500 block">Bs</span>
+                        </div>
+                        <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg">
+                            <span class="text-[10px] text-slate-400 font-semibold block uppercase">Tasa P2P Binance</span>
+                            <div class="text-xl font-bold text-emerald-400 mt-1" id="dashP2pRate">1015,213</div>
+                            <span class="text-[10px] text-slate-500 block">Bs</span>
+                        </div>
+                    </div>
+
+                    <!-- Alertas -->
+                    <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block font-medium">TASA OBJETIVO ALARMA</span>
+                            <input type="number" value="0.00" class="w-full bg-[#0b0f19] text-white px-3 py-1.5 rounded-xl border border-[#2a3954] text-sm mt-1">
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 block font-medium">% GANANCIA ALARMA</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <input type="number" value="10" class="w-full bg-[#0b0f19] text-white px-3 py-1.5 rounded-xl border border-[#2a3954] text-sm text-center">
+                                <span class="text-xs text-slate-400">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Saldo y Monto Base -->
+                    <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg space-y-4">
+                        <div>
+                            <span class="text-[10px] text-amber-400 font-bold block uppercase"><i class="fa-solid fa-wallet"></i> Mi Saldo en Bolívares (Disponibles)</span>
+                            <div class="text-2xl font-bold text-white mt-1">0 <span class="text-xs text-slate-500 font-normal">$0,00 USD</span></div>
+                        </div>
+
+                        <div class="pt-3 border-t border-[#2a3954]">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Monto Base USD</label>
+                            <input type="number" id="baseUsdInput" value="500" oninput="updateInterventionSimulation()" class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954] font-bold text-base">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-2">Comisión Tarjeta</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="setCardFee(1.5)" id="feeBtn15" class="py-2 bg-[#0b0f19] hover:bg-[#1a233a] border border-[#2a3954] rounded-xl text-xs font-semibold transition">1.5%</button>
+                                <button onclick="setCardFee(2.5)" id="feeBtn25" class="py-2 bg-blue-600 border border-blue-500 rounded-xl text-xs font-semibold transition text-white">2.5%</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desglose de Cálculo Intervención -->
+                    <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg text-xs space-y-3 font-mono">
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span><i class="fa-solid fa-cart-shopping text-blue-400"></i> Compras USD a BCV + 0.5%</span>
+                            <span id="calcStep1" class="font-bold text-white">$500,00 x Bs 879,10 = Bs 439.551,82</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span><i class="fa-solid fa-credit-card text-amber-400"></i> Recargas con Tarjeta</span>
+                            <span id="calcStep2" class="font-bold text-rose-400">$500,00 → $487,50</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span><i class="fa-solid fa-bolt text-blue-400"></i> Comisión Binance (-0.25%)</span>
+                            <span id="calcStep3" class="font-bold text-rose-400">$487,50 → 467,51 USDT</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300 border-t border-[#2a3954] pt-2">
+                            <span><i class="fa-solid fa-money-bill-transfer text-emerald-400"></i> Venta USDT en P2P</span>
+                            <span id="calcStep4" class="font-bold text-emerald-400">467,51 USDT x Bs 1.015,21 = Bs 474.624,77</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-3 text-center">
+                            <span class="text-[9px] text-slate-400 font-bold block uppercase">Monto en Banco (+0.5%)</span>
+                            <span id="resMontoBanco" class="text-sm font-bold text-white">439.551,82</span>
+                        </div>
+                        <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-3 text-center">
+                            <span class="text-[9px] text-slate-400 font-bold block uppercase">Neto Binance Capital Neto</span>
+                            <span id="resNetoBinance" class="text-sm font-bold text-emerald-400">$ 487,50</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Panel Derecho: Gráfico TradingView y Monitoreo Telegram -->
+                <div class="lg:col-span-2 space-y-6 flex flex-col">
+                    
+                    <!-- Tarjeta Superior de Ganancia Estimada -->
+                    <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <span class="text-xs text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-line"></i> Ganancia Estimada
+                            </span>
+                            <div class="flex items-baseline gap-4 mt-2">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block">En Bolívares</span>
+                                    <span id="resGananciaBs" class="text-lg font-bold text-white">Bs 35.072,94</span>
+                                </div>
+                                <div class="border-l border-[#2a3954] pl-4">
+                                    <span class="text-[10px] text-slate-400 block">En USDT</span>
+                                    <span id="resGananciaUsdt" class="text-lg font-bold text-emerald-400">34,55 USDT</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-xl text-emerald-400 font-bold text-sm">
+                            +7,98%
+                        </div>
+                    </div>
+
+                    <!-- Métricas de Sesión -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-[#131b2e] border border-[#2a3954] rounded-xl p-3 text-center">
+                            <span class="text-[10px] text-slate-400 block">MARGEN MÁXIMO</span>
+                            <span class="text-sm font-bold text-emerald-400">+9,25%</span>
+                        </div>
+                        <div class="bg-[#131b2e] border border-[#2a3954] rounded-xl p-3 text-center">
+                            <span class="text-[10px] text-slate-400 block">MARGEN MÍNIMO</span>
+                            <span class="text-sm font-bold text-emerald-400">+7,96%</span>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico TradingView Lightweight Charts -->
+                    <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg flex-grow flex flex-col">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-slate-300 uppercase">Precio P2P Binance (Velas Japonesas)</span>
+                            <div class="flex gap-1 text-[10px]">
+                                <button class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">1M</button>
+                                <button class="px-2 py-1 bg-[#0b0f19] text-slate-400 rounded">5M</button>
+                                <button class="px-2 py-1 bg-[#0b0f19] text-slate-400 rounded">15M</button>
+                                <button class="px-2 py-1 bg-[#0b0f19] text-slate-400 rounded">1H</button>
+                            </div>
+                        </div>
+                        <div id="tradingviewChart" class="w-full h-64 rounded-xl overflow-hidden bg-[#0b0f19]"></div>
+                    </div>
+
+                    <!-- Canal Telegram Monitoreo -->
+                    <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-4 shadow-lg space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-300 uppercase flex items-center gap-2">
+                                <i class="fa-brands fa-telegram text-blue-400"></i> Canal Telegram (Monitoreo)
+                            </span>
+                            <div class="flex gap-2 text-[10px]">
+                                <span class="bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20">BDV: CERRADO</span>
+                                <span class="bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20">TESORO (BT): CERRADO</span>
+                            </div>
+                        </div>
+                        <div class="bg-[#0b0f19] p-3 rounded-xl border border-[#2a3954] text-xs font-mono text-slate-300">
+                            <span class="text-[10px] text-slate-500 block mb-1">ÚLTIMO MENSAJE RECIBIDO:</span>
+                            Esperando datos del canal oficial...
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
 
-        <div class="main-layout">
+
+        <!-- ========================================== -->
+        <!-- TAB 2: ARBITRAJE P2P INTEGRADO -->
+        <!-- ========================================== -->
+        <div id="tab-arbitraje" class="space-y-6 hidden">
             
-            <!-- COLUMNA IZQUIERDA: CONTROLES Y OPERATIVA -->
-            <div class="column">
-                <div class="row-inputs">
-                    <div class="input-group">
-                        <label class="input-label">Tasa BCV Oficial</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="tasa-bcv" class="input-field" step="0.01" value="0.00">
+            <!-- Parámetros Globales P2P -->
+            <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+                    <h2 class="text-sm font-semibold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i> Parámetros Globales P2P & Tasa BCV Oficial
+                    </h2>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-400 block font-semibold text-amber-400">Dólar BCV Oficial Ref ($)</span>
+                            <input type="number" id="p2pRefUsd" value="879.10" step="0.01" class="bg-[#0b0f19] text-amber-400 font-bold text-xs w-32 px-2 py-1.5 rounded-xl border border-[#2a3954] text-right">
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">Tasa P2P Binance</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="tasa-p2p" class="input-field" step="0.01" value="0.00">
-                        </div>
+                        <button onclick="refreshP2PData()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-3 py-2 rounded-xl text-xs transition shadow flex items-center gap-2">
+                            <i class="fa-solid fa-rotate" id="p2pRefreshIcon"></i> Actualizar API
+                        </button>
                     </div>
                 </div>
+            </section>
 
-                <!-- NUEVOS CAMPOS DE CONFIGURACIÓN DE ALERTAS PERSONALIZADAS -->
-                <div class="row-inputs">
-                    <div class="input-group">
-                        <label class="input-label">🎯 Tasa Objetivo Alarma</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="input-tasa-objetivo" class="input-field" step="0.01" value="0.00" placeholder="Ej: 850">
-                        </div>
+            <!-- Simulación Comparativa por Banco -->
+            <section>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-table-cells-large text-blue-500"></i> Simulación Comparativa por Banco (Con tasa -0.25% Binance integrada)
+                    </h3>
+                    <span class="text-xs text-slate-400">API Binance P2P Live</span>
+                </div>
+                <div id="p2pCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                    <!-- Inyectado dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Order Books de BDV y Banesco -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[460px]">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-emerald-400 flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-building-columns"></i> Banco de Venezuela (BDV) - Order Book
+                        </h3>
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20">Sincronizado</span>
                     </div>
-                    <div class="input-group">
-                        <label class="input-label">📈 % Ganancia Alarma</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="input-pct-objetivo" class="input-field" step="0.1" value="5.0" placeholder="Ej: 5">
-                            <span class="input-prefix" style="margin-left:4px; font-size:14px;">%</span>
-                        </div>
-                    </div>
+                    <div class="overflow-y-auto flex-grow space-y-2.5 pr-1 custom-scrollbar" id="p2pBdvOrderBook"></div>
                 </div>
 
-                <div class="row-inputs">
-                    <div class="input-group full-width" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), var(--bg-element)); border-color: rgba(59, 130, 246, 0.3);">
-                        <label class="input-label" style="color: #60a5fa;">💰 Mi Saldo en Bolívares (Disponibles)</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">Bs</span>
-                            <input type="number" id="saldo-bs-usuario" class="input-field" step="1" value="0" placeholder="Ej: 300000">
-                        </div>
-                        <div style="font-size: 10px; color: #93c5fd; margin-top: 5px; display: flex; justify-content: space-between;">
-                            <span>Equivalente a comprar:</span>
-                            <strong id="txt-usd-equivalente">$0,00 USD</strong>
-                        </div>
+                <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[460px]">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-rose-400 flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-building-columns"></i> Banesco - Order Book
+                        </h3>
+                        <span class="text-xs bg-rose-500/10 text-rose-400 px-2 py-1 rounded border border-rose-500/20">Sincronizado</span>
                     </div>
-
-                    <div class="input-group">
-                        <label class="input-label">Monto Base USD</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">$</span>
-                            <input type="number" id="monto-compra" class="input-field" step="1" value="500">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">Comisión Tarjeta</label>
-                        <div class="commission-selector">
-                            <button class="com-btn active" data-fee="1.5">1.5%</button>
-                            <button class="com-btn" data-fee="2.5">2.5%</button>
-                        </div>
-                    </div>
+                    <div class="overflow-y-auto flex-grow space-y-2.5 pr-1 custom-scrollbar" id="p2pBanescoOrderBook"></div>
                 </div>
 
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="icon-circle">🏛️</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Compras USD a BCV + 0.5%</div>
-                            <div class="timeline-value" id="txt-paso1">$0,00 × Bs 0,00 = Bs 0,00</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="icon-circle">💳</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Recargas con tarjeta <span id="label-fee-tarjeta">-1.5%</span></div>
-                            <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="icon-circle">🔄</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Comisión Binance P2P <span>-4.1%</span></div>
-                            <div class="timeline-value" id="txt-paso3">$0,00 → 0,00 USDT</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="icon-circle">🔗</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Venta de USDT en Binance P2P</div>
-                            <div class="timeline-value" id="txt-paso4">0,00 USDT × Bs 0,00 = Bs 0,00</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bottom-results-grid">
-                    <div class="bank-card">
-                        <div>
-                            <span class="bank-title">Monto en Banco</span>
-                            <span class="bank-subtitle">Costo BCV (+0.5%)</span>
-                        </div>
-                        <div class="bank-amount" id="txt-monto-banco">Bs 0,00</div>
-                    </div>
-
-                    <div class="binance-card">
-                        <div>
-                            <span class="binance-title">Neto Binance</span>
-                            <span class="binance-subtitle">Capital neto</span>
-                        </div>
-                        <div class="binance-amount" id="txt-monto-binance">$ 0,00</div>
-                    </div>
-                </div>
             </div>
 
-            <!-- COLUMNA DERECHA: GRÁFICO DE VELAS Y TELEGRAM ABAJO -->
-            <div class="column">
-                <div class="profit-card">
-                    <div class="profit-header">
-                        <span class="profit-title">📈 Ganancia Estimada</span>
-                        <span class="profit-pct" id="txt-ganancia-pct">+0.00%</span>
-                    </div>
-                    <div class="profit-grid">
-                        <div>
-                            <div class="profit-sub-title">En Bolívares</div>
-                            <div class="profit-sub-value" id="txt-ganancia-bs">Bs 0,00</div>
-                        </div>
-                        <div>
-                            <div class="profit-sub-title">En USDT</div>
-                            <div class="profit-sub-value" id="txt-ganancia-usdt">0,00 USDT</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="panel-stats">
-                    <div class="panel-title-sec">Métricas de la Sesión</div>
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-label">Margen Máximo</div>
-                            <div class="stat-val max" id="stat-max">0.00%</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Margen Mínimo</div>
-                            <div class="stat-val min" id="stat-min">0.00%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- GRÁFICO TIPO TRADINGVIEW (VELAS JAPONESAS - PRECIO BINANCE P2P) -->
-                <div class="tv-chart-container">
-                    <div class="tv-toolbar">
-                        <span class="tv-title">Precio P2P Binance (Velas Japonesas)</span>
-                        <div class="tv-timeframes">
-                            <button class="tf-btn active" data-tf="1M">1M</button>
-                            <button class="tf-btn" data-tf="5M">5M</button>
-                            <button class="tf-btn" data-tf="15M">15M</button>
-                            <button class="tf-btn" data-tf="1H">1H</button>
-                        </div>
-                    </div>
-                    <div id="tradingview-chart"></div>
-                </div>
-
-                <!-- CANAL DE MONITOREO TELEGRAM (UBICADO ABAJO DEL GRÁFICO) -->
-                <div class="notif-panel">
-                    <div style="font-weight: 700; color: #ffffff; display:flex; justify-content:space-between; align-items:center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <span>📡 Canal Telegram (Monitoreo)</span>
-                    </div>
-                    
-                    <div class="banks-status-grid">
-                        <div class="bank-badge-box">
-                            <div class="bank-badge-title">BDV</div>
-                            <div id="status-bdv" class="bank-status-val">CERRADO</div>
-                        </div>
-                        <div class="bank-badge-box">
-                            <div class="bank-badge-title">TESORO (BT)</div>
-                            <div id="status-tesoro" class="bank-status-val">CERRADO</div>
-                        </div>
-                    </div>
-
+            <!-- Bitácora de Operaciones P2P -->
+            <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <div>
-                        <div style="font-size: 9px; color: var(--text-muted); margin-bottom: 2px; text-transform: uppercase;">Último mensaje recibido:</div>
-                        <div id="txt-ultimo-mensaje" class="last-msg-box">Esperando datos del canal...</div>
+                        <h3 class="font-bold text-white text-base">Bitácora de Control y Arbitraje P2P</h3>
+                        <p class="text-xs text-slate-400">Controla tu capital y registra cada ejecución de arbitraje completada</p>
                     </div>
-
-                    <div>
-                        <div style="font-size: 9px; color: var(--text-muted); margin-bottom: 2px; text-transform: uppercase;">Historial de Aperturas (Hoy):</div>
-                        <div id="log-historial" class="history-box">Sin registros aún...</div>
-                    </div>
-
-                    <button id="btn-permiso" class="notif-btn">🔔 Activar Alertas y Sonido</button>
+                    <button onclick="openP2PModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-plus text-white"></i> Registrar Operación
+                    </button>
                 </div>
-            </div>
 
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-[#2a3954] text-slate-400">
+                                <th class="py-3 px-3">Fecha/Hora</th>
+                                <th class="py-3 px-3">Banco</th>
+                                <th class="py-3 px-3">Monto Invertido (Bs)</th>
+                                <th class="py-3 px-3">Compra (-0.25%)</th>
+                                <th class="py-3 px-3">Venta</th>
+                                <th class="py-3 px-3">Ganancia Neta (Bs)</th>
+                                <th class="py-3 px-3">Ganancia ($ BCV)</th>
+                                <th class="py-3 px-3 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="p2pTradesTableBody" class="divide-y divide-[#2a3954]/50">
+                            <tr>
+                                <td colspan="8" class="text-center py-6 text-slate-500">No hay operaciones registradas aún.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Modal Registrar Operación P2P -->
+    <div id="p2pModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#131b2e] border border-[#2a3954] w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <h3 class="text-lg font-bold text-white mb-4">Registrar Operación P2P</h3>
+            <form id="p2pTradeForm" onsubmit="saveP2PTrade(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Banco Utilizado</label>
+                    <select id="modalBank" class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954] text-sm">
+                        <option value="BDV">Banco de Venezuela (BDV)</option>
+                        <option value="Banesco">Banesco</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Monto Invertido (Bs.S)</label>
+                    <input type="number" id="modalAmount" required class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954] text-sm" placeholder="500000">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tasa Compra Base</label>
+                        <input type="number" id="modalBuyRate" step="0.01" required class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954] text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tasa Venta</label>
+                        <input type="number" id="modalSellRate" step="0.01" required class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954] text-sm">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeP2PModal()" class="bg-[#0b0f19] hover:bg-[#1a233a] text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold border border-[#2a3954]">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold">Guardar</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        const VERCEL_URL = 'https://simulador-dusky-zeta.vercel.app';
-        const TELEGRAM_BOT_TOKEN = '8946597702:AAEzSTw_-rNIWEyUtISWAxrcumqdwbylKWI';
-        const TELEGRAM_CHAT_ID = '304678344';
-        
+        // --- Constantes de Tasas Base ---
+        const GLOBAL_BCV_RATE = 879.10;
+
+        // --- Navegación por pestañas ---
+        function switchTab(tabName) {
+            const btnIntervencion = document.getElementById('nav-intervencion');
+            const btnArbitraje = document.getElementById('nav-arbitraje');
+            const tabIntervencion = document.getElementById('tab-intervencion');
+            const tabArbitraje = document.getElementById('tab-arbitraje');
+
+            if(tabName === 'intervencion') {
+                btnIntervencion.className = "px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow-md";
+                btnArbitraje.className = "px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white";
+                tabIntervencion.classList.remove('hidden');
+                tabArbitraje.classList.add('hidden');
+                setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 100);
+            } else {
+                btnArbitraje.className = "px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow-md";
+                btnIntervencion.className = "px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white";
+                tabArbitraje.classList.remove('hidden');
+                tabIntervencion.classList.add('hidden');
+            }
+        }
+
+        // --- Lógica Tab 1: Intervención ---
+        let currentCardFee = 2.5;
+
+        function setCardFee(fee) {
+            currentCardFee = fee;
+            document.getElementById('feeBtn15').className = fee === 1.5 ? "py-2 bg-blue-600 border border-blue-500 rounded-xl text-xs font-semibold transition text-white" : "py-2 bg-[#0b0f19] hover:bg-[#1a233a] border border-[#2a3954] rounded-xl text-xs font-semibold transition text-slate-300";
+            document.getElementById('feeBtn25').className = fee === 2.5 ? "py-2 bg-blue-600 border border-blue-500 rounded-xl text-xs font-semibold transition text-white" : "py-2 bg-[#0b0f19] hover:bg-[#1a233a] border border-[#2a3954] rounded-xl text-xs font-semibold transition text-slate-300";
+            updateInterventionSimulation();
+        }
+
+        function updateInterventionSimulation() {
+            const baseUsd = parseFloat(document.getElementById('baseUsdInput').value) || 500;
+            const bcvRate = GLOBAL_BCV_RATE;
+            const p2pRate = 1015.213;
+
+            const totalBsBcv = baseUsd * bcvRate * 1.005; // +0.5%
+            const cardChargedUsd = baseUsd * (1 - (currentCardFee / 100));
+            const binanceUsdt = cardChargedUsd * 0.9975; // -0.25% comisión binance
+            const sellBs = binanceUsdt * p2pRate;
+
+            document.getElementById('calcStep1').innerText = `$${baseUsd.toFixed(2)} x Bs ${bcvRate.toFixed(2)} = Bs ${totalBsBcv.toLocaleString('es-VE', {maximumFractionDigits:2})}`;
+            document.getElementById('calcStep2').innerText = `$${baseUsd.toFixed(2)} → $${cardChargedUsd.toFixed(2)}`;
+            document.getElementById('calcStep3').innerText = `$${cardChargedUsd.toFixed(2)} → ${binanceUsdt.toFixed(2)} USDT`;
+            document.getElementById('calcStep4').innerText = `${binanceUsdt.toFixed(2)} USDT x Bs ${p2pRate} = Bs ${sellBs.toLocaleString('es-VE', {maximumFractionDigits:2})}`;
+
+            document.getElementById('resMontoBanco').innerText = totalBsBcv.toLocaleString('es-VE', {maximumFractionDigits:2});
+            document.getElementById('resNetoBinance').innerText = `$ ${cardChargedUsd.toFixed(2)}`;
+
+            const gananciaBs = sellBs - totalBsBcv;
+            const gananciaUsdt = gananciaBs / p2pRate;
+            document.getElementById('resGananciaBs').innerText = `Bs ${gananciaBs.toLocaleString('es-VE', {maximumFractionDigits:2})}`;
+            document.getElementById('resGananciaUsdt').innerText = `${gananciaUsdt.toFixed(2)} USDT`;
+        }
+
+        // Inicializar Gráfico TradingView
         let tvChart = null;
-        let tvCandleSeries = null;
-        let historialCandles = JSON.parse(localStorage.getItem('tv_historial_candles')) || generarVelasInicialesFicticias();
-        let temporalidadActual = '1M';
-        let registroHistorico = JSON.parse(localStorage.getItem('historial_bancos_p2p')) || [];
-        
-        let maxMargenSession = -999;
-        let minMargenSession = 999;
-        let comisionTarjetaSeleccionada = 1.5;
-        
-        let estadoBdvAnterior = "";
-        let estadoTesoroAnterior = "";
-
-        // Flags para control de alertas personalizadas y evitar spam en Telegram
-        let alertaPctEnviada = false;
-        let alertaTasaEnviada = false;
-
-        const inputBCV = document.getElementById('tasa-bcv');
-        const inputP2P = document.getElementById('tasa-p2p');
-        const inputMonto = document.getElementById('monto-compra');
-        const inputSaldoBsUsuario = document.getElementById('saldo-bs-usuario');
-        const inputTasaObjetivo = document.getElementById('input-tasa-objetivo');
-        const inputPctObjetivo = document.getElementById('input-pct-objetivo');
-        const txtUsdEquivalente = document.getElementById('txt-usd-equivalente');
-
-        const txtUltimaHora = document.getElementById('txt-ultima-hora');
-        const btnPermiso = document.getElementById('btn-permiso');
-        const alertFlotante = document.getElementById('alert-flotante');
-        
-        const statusBdv = document.getElementById('status-bdv');
-        const statusTesoro = document.getElementById('status-tesoro');
-        const txtUltimoMensaje = document.getElementById('txt-ultimo-mensaje');
-        const logHistorial = document.getElementById('log-historial');
-
-        const labelFeeTarjeta = document.getElementById('label-fee-tarjeta');
-        const audioAlerta = document.getElementById('audioAlerta');
-
-        const txtPaso1 = document.getElementById('txt-paso1');
-        const txtPaso2 = document.getElementById('txt-paso2');
-        const txtPaso3 = document.getElementById('txt-paso3');
-        const txtPaso4 = document.getElementById('txt-paso4');
-        const txtMontoBanco = document.getElementById('txt-monto-banco');
-        const txtMontoBinance = document.getElementById('txt-monto-binance');
-        const txtGananciaPct = document.getElementById('txt-ganancia-pct');
-        const txtGananciaBs = document.getElementById('txt-ganancia-bs');
-        const txtGananciaUSDT = document.getElementById('txt-ganancia-usdt');
-        
-        const statMax = document.getElementById('stat-max');
-        const statMin = document.getElementById('stat-min');
-
-        function formatVE(valor, decimales = 2) {
-            return valor.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
-        }
-
-        function generarVelasInicialesFicticias() {
-            const velas = [];
-            let tiempoBase = Math.floor(Date.now() / 1000) - (30 * 60);
-            let precioBase = 840.0;
-            for (let i = 0; i < 30; i++) {
-                let open = precioBase;
-                let close = open + (Math.random() * 2.0 - 1.0);
-                let high = Math.max(open, close) + Math.random() * 0.8;
-                let low = Math.min(open, close) - Math.random() * 0.8;
-                velas.push({
-                    time: tiempoBase + (i * 60),
-                    open: parseFloat(open.toFixed(2)),
-                    high: parseFloat(high.toFixed(2)),
-                    low: parseFloat(low.toFixed(2)),
-                    close: parseFloat(close.toFixed(2))
-                });
-                precioBase = close;
-            }
-            return velas;
-        }
-
-        async function enviarNotificacionTelegram(texto) {
-            try {
-                await fetch(`${VERCEL_URL}/api/send-telegram`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: TELEGRAM_BOT_TOKEN, chat_id: TELEGRAM_CHAT_ID, text: texto })
-                });
-            } catch (err) {
-                console.error("Error al enviar mensaje a Telegram:", err);
-            }
-        }
-
-        function registrarEnHistorial(textoAccion) {
-            const horaActual = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            registroHistorico.unshift(`[${horaActual}] ${textoAccion}`);
-            if (registroHistorico.length > 20) registroHistorico.pop();
-            localStorage.setItem('historial_bancos_p2p', JSON.stringify(registroHistorico));
-            actualizarVistaHistorial();
-        }
-
-        function actualizarVistaHistorial() {
-            if (registroHistorico.length === 0) {
-                logHistorial.innerHTML = "Sin registros aún...";
-                return;
-            }
-            logHistorial.innerHTML = registroHistorico.join('<br>');
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            actualizarVistaHistorial();
-            inicializarGraficaTradingView();
-            obtenerTasasAPI();
-        });
-
-        // Cambio de Temporalidades
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                temporalidadActual = e.target.dataset.tf;
-                filtrarYActualizarGrafica();
+        function initTradingViewChart() {
+            const container = document.getElementById('tradingviewChart');
+            if(!container) return;
+            tvChart = LightweightCharts.createChart(container, {
+                layout: { background: { type: 'solid', color: '#0b0f19' }, textColor: '#9ca3af' },
+                grid: { vertLines: { color: '#1a233a' }, horzLines: { color: '#1a233a' } },
+                width: container.clientWidth,
+                height: 256,
             });
-        });
-
-        document.querySelectorAll('.com-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.com-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                comisionTarjetaSeleccionada = parseFloat(e.target.dataset.fee);
-                labelFeeTarjeta.textContent = `-${comisionTarjetaSeleccionada}%`;
-                calcularSimulacion();
+            const candlestickSeries = tvChart.addCandlestickSeries({
+                upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
             });
-        });
-
-        btnPermiso.addEventListener('click', () => {
-            if (!("Notification" in window)) {
-                alert("Este navegador no soporta notificaciones.");
-                return;
-            }
-            Notification.requestPermission().then(permiso => {
-                if (permiso === "granted") {
-                    btnPermiso.textContent = "🔔 Sistema de Alertas Activo";
-                    btnPermiso.style.backgroundColor = "#10b981";
-                    audioAlerta.play().then(() => { audioAlerta.pause(); }).catch(e => {});
-                }
+            candlestickSeries.setData([
+                { time: '2026-10-01', open: 1010, high: 1022, low: 1008, close: 1015 },
+                { time: '2026-10-02', open: 1015, high: 1018, low: 1012, close: 1014 },
+                { time: '2026-10-03', open: 1014, high: 1020, low: 1011, close: 1018 },
+                { time: '2026-10-04', open: 1018, high: 1025, low: 1016, close: 1019 },
+                { time: '2026-10-05', open: 1019, high: 1021, low: 1013, close: 1015.21 }
+            ]);
+            window.addEventListener('resize', () => {
+                if(tvChart && container) tvChart.resize(container.clientWidth, 256);
             });
-        });
-
-        if (window.Notification && Notification.permission === "granted") {
-            btnPermiso.textContent = "🔔 Sistema de Alertas Activo";
-            btnPermiso.style.backgroundColor = "#10b981";
         }
 
-        // Web Worker configurado para ejecutarse cada 1 segundo exacto
-        const workerCode = `
-            self.onmessage = function(e) {
-                if (e.data === 'start') {
-                    setInterval(() => { self.postMessage('tick'); }, 1000);
-                }
-            };
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const worker = new Worker(URL.createObjectURL(blob));
 
-        let contadorSegundosAPI = 0;
-
-        worker.onmessage = function(e) {
-            if (e.data === 'tick') {
-                const precioActual = parseFloat(inputP2P.value);
-                if (!isNaN(precioActual) && precioActual > 0) {
-                    actualizarVelaBinanceSegundoARegundo(precioActual);
-                }
-
-                contadorSegundosAPI++;
-                if (contadorSegundosAPI >= 5) {
-                    contadorSegundosAPI = 0;
-                    obtenerTasasAPI();
-                }
+        // --- Lógica Tab 2: Arbitraje P2P ---
+        let p2pCardAmounts = { BDV: 500000, Banesco: 500000 };
+        let p2pCache = {
+            BDV: {
+                buyers: [
+                    { name: 'FastExchangeVE', rate: 1020.99, min: 10000, max: 2000000, orders: '1,420 (99.2%)' },
+                    { name: 'CryptoCaracas_P2P', rate: 1019.50, min: 250000, max: 5000000, orders: '890 (100%)' }
+                ],
+                sellers: [
+                    { name: 'ComercialGlobal', rate: 1016.21, min: 5000, max: 1500000, orders: '2,100 (99.8%)' },
+                    { name: 'TasaExpress', rate: 1015.00, min: 300000, max: 3000000, orders: '650 (99.1%)' }
+                ]
+            },
+            Banesco: {
+                buyers: [
+                    { name: 'CryptoExpress', rate: 1020.89, min: 50000, max: 3000000, orders: '3,150 (99.9%)' },
+                    { name: 'BanescoVipTrader', rate: 1019.80, min: 100000, max: 6000000, orders: '1,890 (99.5%)' }
+                ],
+                sellers: [
+                    { name: 'PagoRapidoVE', rate: 1018.99, min: 20000, max: 2500000, orders: '4,200 (100%)' },
+                    { name: 'CaracasLiquidez', rate: 1017.50, min: 500000, max: 5000000, orders: '920 (98.9%)' }
+                ]
             }
         };
-        worker.postMessage('start');
+        let p2pTradesList = JSON.parse(localStorage.getItem('p2p_terminal_trades')) || [];
 
-        function procesarMensajeCanal(textoUltimoMensaje) {
-            if (!textoUltimoMensaje) return;
-            txtUltimoMensaje.textContent = textoUltimoMensaje;
-            const textoUpper = textoUltimoMensaje.toUpperCase();
+        function initP2PApp() {
+            // Sincronizar input superior con la tasa correcta de intervención
+            document.getElementById('p2pRefUsd').value = GLOBAL_BCV_RATE.toFixed(2);
+            document.getElementById('headerBcv').innerText = `Bs. ${GLOBAL_BCV_RATE.toFixed(2)}`;
+            document.getElementById('dashBcvRate').innerText = GLOBAL_BCV_RATE.toFixed(2);
 
-            const esBdv = textoUpper.includes("BDV");
-            if (esBdv) {
-                const bdvAbierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN DIGITAL");
-                const bdvCerrado = textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA");
+            updateP2PCalculations();
+            renderP2POrderBooks();
+            renderP2PTradesTable();
 
-                if (bdvAbierto && !bdvCerrado) {
-                    statusBdv.textContent = "ABIERTO";
-                    statusBdv.className = "bank-status-val open";
-                    if (estadoBdvAnterior !== "ABIERTO") {
-                        registrarEnHistorial("🟢 BDV Abrió intervención");
-                        dispararAlertaVisualSonora("🚨 ¡BDV ABIERTO!", textoUltimoMensaje);
-                        enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN BDV ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                        estadoBdvAnterior = "ABIERTO";
-                    }
-                } else if (bdvCerrado) {
-                    statusBdv.textContent = "CERRADO";
-                    statusBdv.className = "bank-status-val";
-                    if (estadoBdvAnterior !== "CERRADO" && estadoBdvAnterior !== "") {
-                        registrarEnHistorial("🔴 BDV Cerró intervención");
-                        enviarNotificacionTelegram("🔴 *BDV CERRADO*\n\nEl sistema detectó el cierre de la intervención de BDV.");
-                    }
-                    estadoBdvAnterior = "CERRADO";
-                }
-            }
+            document.getElementById('p2pRefUsd').addEventListener('input', updateP2PCalculations);
+        }
 
-            const esTesoro = textoUpper.includes("TESORO") || textoUpper.includes("BT");
-            if (esTesoro) {
-                const tesoroAbierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN");
-                const tesoroCerrado = textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA");
-
-                if (tesoroAbierto && !tesoroCerrado) {
-                    statusTesoro.textContent = "ABIERTO";
-                    statusTesoro.className = "bank-status-val open";
-                    if (estadoTesoroAnterior !== "ABIERTO") {
-                        registrarEnHistorial("🟢 TESORO Abrió intervención");
-                        dispararAlertaVisualSonora("🚨 ¡TESORO ABIERTO!", textoUltimoMensaje);
-                        enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN TESORO ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                        estadoTesoroAnterior = "ABIERTO";
-                    }
-                } else if (tesoroCerrado) {
-                    statusTesoro.textContent = "CERRADO";
-                    statusTesoro.className = "bank-status-val";
-                    if (estadoTesoroAnterior !== "CERRADO" && estadoTesoroAnterior !== "") {
-                        registrarEnHistorial("🔴 TESORO Cerró intervención");
-                        enviarNotificacionTelegram("🔴 *TESORO CERRADO*\n\nEl sistema detectó el cierre de la intervención del Tesoro.");
-                    }
-                    estadoTesoroAnterior = "CERRADO";
-                }
+        function updateP2PCardAmount(bankName, val) {
+            const num = parseFloat(val);
+            if(!isNaN(num)) {
+                p2pCardAmounts[bankName] = num;
+                updateP2PCalculations();
+                renderP2POrderBooks();
             }
         }
 
-        function dispararAlertaVisualSonora(titulo, subtitulo) {
-            alertFlotante.innerHTML = `${titulo}<br><span style="font-size:11px; font-weight: normal;">${subtitulo}</span>`;
-            alertFlotante.classList.add('show');
-            setTimeout(() => alertFlotante.classList.remove('show'), 6000);
-
-            if (window.Notification && Notification.permission === "granted") {
-                new Notification(titulo, { body: subtitulo });
-            }
-            try {
-                audioAlerta.currentTime = 0;
-                audioAlerta.play();
-            } catch (err) {}
+        async function refreshP2PData() {
+            const icon = document.getElementById('p2pRefreshIcon');
+            icon.classList.add('fa-spin');
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                const randDelta = () => (Math.random() * 0.4 - 0.2);
+                ['BDV', 'Banesco'].forEach(bKey => {
+                    p2pCache[bKey].buyers.forEach(b => b.rate = parseFloat((b.rate + randDelta()).toFixed(2)));
+                    p2pCache[bKey].sellers.forEach(s => s.rate = parseFloat((s.rate + randDelta()).toFixed(2)));
+                });
+                updateP2PCalculations();
+                renderP2POrderBooks();
+            }, 500);
         }
 
-        function calcularSimulacion() {
-            const TasaBCV = parseFloat(inputBCV.value) || 0;
-            const TasaP2P = parseFloat(inputP2P.value) || 0;
-            const montoUSD = parseFloat(inputMonto.value) || 0;
-            const saldoBsUsuario = parseFloat(inputSaldoBsUsuario.value) || 0;
+        function updateP2PCalculations() {
+            const usdRate = parseFloat(document.getElementById('p2pRefUsd').value) || GLOBAL_BCV_RATE;
+            const gridContainer = document.getElementById('p2pCardsGrid');
+            gridContainer.innerHTML = '';
 
-            const tasaConComision = TasaBCV * 1.005;
-            if (tasaConComision > 0 && saldoBsUsuario > 0) {
-                const usdEquivalentes = saldoBsUsuario / tasaConComision;
-                txtUsdEquivalente.textContent = `$${formatVE(usdEquivalentes)} USD`;
-            } else {
-                txtUsdEquivalente.textContent = `$0,00 USD`;
-            }
+            const banksConfig = [
+                { key: 'BDV', name: 'BANCO DE VENEZUELA (BDV)', badgeBg: 'bg-emerald-500/10 text-emerald-400' },
+                { key: 'Banesco', name: 'BANESCO', badgeBg: 'bg-rose-500/10 text-rose-400' }
+            ];
 
-            const costoTotalBanco = montoUSD * tasaConComision;
-            const factorTarjeta = (100 - comisionTarjetaSeleccionada) / 100;
-            const montoTarjeta = montoUSD * factorTarjeta;
-            const montoUSDT = montoTarjeta * 0.959; 
-            const ventaBolivares = montoUSDT * TasaP2P;
+            banksConfig.forEach(bankInfo => {
+                const amountBs = p2pCardAmounts[bankInfo.key];
+                const bankData = p2pCache[bankInfo.key];
 
-            const gananciaBs = ventaBolivares - costoTotalBanco;
-            const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
-            const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
+                const bestBuy = bankData.buyers[0];
+                const bestSell = bankData.sellers[0];
 
-            // --- EVALUACIÓN DE ALERTAS PERSONALIZADAS ---
-            const pctObjetivoUser = parseFloat(inputPctObjetivo.value) || 5.0;
-            const tasaObjetivoUser = parseFloat(inputTasaObjetivo.value) || 0;
+                const rawBuyRate = bestBuy.rate;
+                const effectiveBuyRate = rawBuyRate * (1 - 0.0025);
+                const sellRate = bestSell.rate;
 
-            // 1. Alerta por Porcentaje de Ganancia
-            if (porcentajeGanancia >= pctObjetivoUser) {
-                if (!alertaPctEnviada) {
-                    enviarNotificacionTelegram(`🚀 *¡GANANCIA OBJETIVO ALCANZADA!* 🚀\n\nEl margen subió a *+${porcentajeGanancia.toFixed(2)}%*.\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
-                    dispararAlertaVisualSonora(`🚨 ¡GANANCIA DEL ${porcentajeGanancia.toFixed(1)}%!`, "Revisa Telegram para comprar.");
-                    alertaPctEnviada = true;
-                }
-            } else {
-                alertaPctEnviada = false; // Se reinicia si baja del porcentaje
-            }
-
-            // 2. Alerta por Tasa P2P Deseada
-            if (tasaObjetivoUser > 0 && TasaP2P >= tasaObjetivoUser) {
-                if (!alertaTasaEnviada) {
-                    enviarNotificacionTelegram(`🎯 *¡TASA OBJETIVO ALCANZADA!* 🎯\n\nEl precio P2P llegó a *Bs ${formatVE(TasaP2P)}* (Tu meta era: Bs ${formatVE(tasaObjetivoUser)}).`);
-                    dispararAlertaVisualSonora(`🎯 ¡TASA P2P EN Bs ${formatVE(TasaP2P)}!`, "Meta alcanzada. ¡Hora de comprar!");
-                    alertaTasaEnviada = true;
-                }
-            } else {
-                alertaTasaEnviada = false; // Se reinicia si el precio vuelve a bajar
-            }
-            // --------------------------------------------
-
-            txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
-            txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
-            txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
-            txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(TasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
-            
-            txtMontoBanco.textContent = `Bs ${formatVE(costoTotalBanco)}`;
-            txtMontoBinance.textContent = `$ ${formatVE(montoTarjeta)}`;
-            txtGananciaPct.textContent = `${porcentajeGanancia >= 0 ? '+' : ''}${formatVE(porcentajeGanancia)}%`;
-            txtGananciaBs.textContent = `Bs ${formatVE(gananciaBs)}`;
-            txtGananciaUSDT.textContent = `${formatVE(gananciaUSDT)} USDT`;
-
-            if (porcentajeGanancia !== 0) {
-                if (porcentajeGanancia > maxMargenSession || maxMargenSession === -999) {
-                    maxMargenSession = porcentajeGanancia;
-                    statMax.textContent = `${maxMargenSession >= 0 ? '+' : ''}${formatVE(maxMargenSession)}%`;
-                }
-                if (porcentajeGanancia < minMargenSession || minMargenSession === 999) {
-                    minMargenSession = porcentajeGanancia;
-                    statMin.textContent = `${minMargenSession >= 0 ? '+' : ''}${formatVE(minMargenSession)}%`;
-                }
-            }
-
-            if (TasaP2P > 0) {
-                actualizarVelaBinance(TasaP2P);
-            }
-        }
-
-        async function obtenerTasasAPI() {
-            try {
-                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
-                const dataBCV = await resBCV.json();
+                const spread = (effectiveBuyRate / sellRate).toFixed(4);
+                const totalRetornoBs = amountBs * parseFloat(spread);
                 
-                if (!dataBCV.success) throw new Error("Error BCV");
-                const tasaBCV = dataBCV.bcv;
-                inputBCV.value = tasaBCV;
+                // Sin comisiones de pago móvil ni comisión fija por banco
+                const netProfitBs = totalRetornoBs - amountBs;
+                const profitUsd = netProfitBs / usdRate;
+                const isProfitable = netProfitBs > 0;
 
-                const montoUSD = parseFloat(inputMonto.value) || 500;
-                const costoTotalBanco = montoUSD * (tasaBCV * 1.005);
-                const montoBsFiltro = Math.round(costoTotalBanco);
+                const cardHtml = `
+                    <div class="bg-[#131b2e] border ${isProfitable ? 'border-[#2a3954]' : 'border-rose-900/40'} rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="text-center border-b border-[#2a3954] pb-3 mb-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] uppercase font-bold text-slate-400">MONTO INVERTIDO (BS.S)</span>
+                                    <span class="text-xs font-bold py-0.5 px-2 rounded ${bankInfo.badgeBg}">${bankInfo.key}</span>
+                                </div>
+                                <div class="relative mt-1">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs">Bs</span>
+                                    <input type="number" value="${amountBs}" step="10000" oninput="updateP2PCardAmount('${bankInfo.key}', this.value)" class="w-full bg-[#0b0f19] text-white font-bold text-base pl-9 pr-3 py-1.5 rounded-xl border border-[#2a3954] text-center">
+                                </div>
+                            </div>
 
-                const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`);
-                const dataBinance = await resBinanceVivo.json();
-                
-                if(dataBinance.precio_binance_p2p) {
-                    inputP2P.value = dataBinance.precio_binance_p2p;
-                }
+                            <div class="grid grid-cols-2 gap-3 text-center my-3 bg-[#0b0f19] p-3 rounded-xl border border-[#2a3954]">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-medium">COMPRA (-0.25%)</span>
+                                    <span class="text-emerald-400 font-bold text-sm">Bs. ${effectiveBuyRate.toFixed(2)}</span>
+                                    <span class="text-[9px] text-slate-500 block">Base: ${rawBuyRate.toFixed(2)} (-0.25%)</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-medium">VENDE (MÁS CARO)</span>
+                                    <span class="text-rose-400 font-bold text-sm">Bs. ${sellRate.toFixed(2)}</span>
+                                </div>
+                            </div>
 
-                if (dataBinance.ultimo_mensaje_canal) {
-                    procesarMensajeCanal(dataBinance.ultimo_mensaje_canal);
-                }
+                            <div class="text-center my-3">
+                                <span class="text-[10px] text-slate-400 uppercase tracking-widest block">SPREAD NETO</span>
+                                <span class="text-sm font-bold text-white bg-[#0b0f19] px-4 py-1 rounded-full inline-block mt-0.5 border border-[#2a3954]">${spread}</span>
+                            </div>
 
-            } catch (error) {
-                console.warn("Modo manual o error de conexión:", error);
-            } finally {
-                calcularSimulacion();
-                const ahora = new Date();
-                const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                txtUltimaHora.textContent = `Sync: ${horaActual}`;
-            }
+                            <div class="grid grid-cols-2 gap-2 text-center my-3 text-xs">
+                                <div class="bg-[#0b0f19]/40 p-2 rounded-xl border border-[#2a3954]">
+                                    <span class="text-[10px] text-slate-400 block">MONTO COMPRA</span>
+                                    <span class="text-white font-semibold">Bs. ${amountBs.toLocaleString('es-VE', {maximumFractionDigits:0})}</span>
+                                </div>
+                                <div class="bg-[#0b0f19]/40 p-2 rounded-xl border border-[#2a3954]">
+                                    <span class="text-[10px] text-slate-400 block">TOTAL RETORNO</span>
+                                    <span class="text-emerald-300 font-semibold">Bs. ${totalRetornoBs.toLocaleString('es-VE', {maximumFractionDigits:0})}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-[#2a3954] text-center bg-[#0b0f19] p-3 rounded-xl">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase block">GANANCIA NETA</span>
+                            <div class="text-base font-bold ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}">
+                                Bs. ${netProfitBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </div>
+                            <div class="text-xs font-semibold text-amber-300 mt-1">
+                                $ ${profitUsd.toFixed(2)} USD (BCV Oficial)
+                            </div>
+                        </div>
+                    </div>
+                `;
+                gridContainer.innerHTML += cardHtml;
+            });
         }
 
-        /* CONFIGURACIÓN GRÁFICO TRADINGVIEW VELAS JAPONESAS */
-        function inicializarGraficaTradingView() {
-            const container = document.getElementById('tradingview-chart');
+        function renderP2POrderBooks() {
+            renderBankOrderBook('BDV', document.getElementById('p2pBdvOrderBook'));
+            renderBankOrderBook('Banesco', document.getElementById('p2pBanescoOrderBook'));
+        }
+
+        function renderBankOrderBook(bankName, container) {
             container.innerHTML = '';
-
-            tvChart = LightweightCharts.createChart(container, {
-                width: container.clientWidth,
-                height: 220,
-                layout: {
-                    background: { type: 'solid', color: '#1a233a' },
-                    textColor: '#9ca3af',
-                },
-                grid: {
-                    vertLines: { color: '#2a3954' },
-                    horzLines: { color: '#2a3954' },
-                },
-                rightPriceScale: {
-                    borderColor: '#2a3954',
-                },
-                timeScale: {
-                    borderColor: '#2a3954',
-                    timeVisible: true,
-                    secondsVisible: false,
-                },
-                crosshair: {
-                    mode: LightweightCharts.CrosshairMode.Normal,
-                },
+            const data = p2pCache[bankName];
+            let html = `<div class="text-[11px] font-semibold text-slate-400 mb-1">Comerciantes de Compra:</div>`;
+            data.buyers.forEach(b => {
+                const effectiveRate = b.rate * (1 - 0.0025);
+                html += `
+                    <div class="bg-[#0b0f19] p-2.5 rounded-xl border border-[#2a3954] flex justify-between items-center text-xs mb-2">
+                        <div>
+                            <div class="font-bold text-white flex items-center gap-1">
+                                ${b.name} <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded">Compra</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Límites: Bs. ${b.min.toLocaleString()} - ${b.max.toLocaleString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-emerald-400 font-bold text-sm">Bs. ${effectiveRate.toFixed(2)}</div>
+                            <span class="text-[9px] text-slate-500">Base: ${b.rate.toFixed(2)} (-0.25%)</span>
+                        </div>
+                    </div>
+                `;
             });
 
-            tvCandleSeries = tvChart.addCandlestickSeries({
-                upColor: '#10b981',
-                downColor: '#ef4444',
-                borderVisible: false,
-                wickUpColor: '#10b981',
-                wickDownColor: '#ef4444',
+            html += `<div class="text-[11px] font-semibold text-slate-400 mt-3 mb-1">Comerciantes de Venta:</div>`;
+            data.sellers.forEach(s => {
+                html += `
+                    <div class="bg-[#0b0f19] p-2.5 rounded-xl border border-[#2a3954] flex justify-between items-center text-xs mb-2">
+                        <div>
+                            <div class="font-bold text-white flex items-center gap-1">
+                                ${s.name} <span class="text-[9px] bg-rose-500/20 text-rose-400 px-1 rounded">Venta</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Límites: Bs. ${s.min.toLocaleString()} - ${s.max.toLocaleString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-rose-400 font-bold text-sm">Bs. ${s.rate.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
             });
-
-            filtrarYActualizarGrafica();
-
-            window.addEventListener('resize', () => {
-                tvChart.applyOptions({ width: container.clientWidth });
-            });
+            container.innerHTML = html;
         }
 
-        function filtrarYActualizarGrafica() {
-            if (!tvCandleSeries) return;
-            const ahoraSecs = Math.floor(Date.now() / 1000);
-            let segundosAtras = 1800; // 1M por defecto
-
-            if (temporalidadActual === '5M') segundosAtras = 300;
-            else if (temporalidadActual === '15M') segundosAtras = 900;
-            else if (temporalidadActual === '1H') segundosAtras = 3600;
-
-            const corteTiempo = ahoraSecs - segundosAtras;
-            const datosFiltrados = historialCandles.filter(item => item.time >= corteTiempo);
-
-            tvCandleSeries.setData(datosFiltrados);
-            tvChart.timeScale().fitContent();
+        function openP2PModal() {
+            document.getElementById('p2pModal').classList.remove('hidden');
+        }
+        function closeP2PModal() {
+            document.getElementById('p2pModal').classList.add('hidden');
         }
 
-        function actualizarVelaBinance(nuevoPrecio) {
-            if (isNaN(nuevoPrecio)) return;
-            const tiempoActual = Math.floor(Date.now() / 1000);
+        function saveP2PTrade(e) {
+            e.preventDefault();
+            const bank = document.getElementById('modalBank').value;
+            const amount = parseFloat(document.getElementById('modalAmount').value);
+            const buyRate = parseFloat(document.getElementById('modalBuyRate').value) * (1 - 0.0025);
+            const sellRate = parseFloat(document.getElementById('modalSellRate').value);
+            const usdRate = parseFloat(document.getElementById('p2pRefUsd').value) || GLOBAL_BCV_RATE;
 
-            const ultimaVela = historialCandles[historialCandles.length - 1];
-            if (ultimaVela && (tiempoActual - ultimaVela.time < 60)) {
-                ultimaVela.close = parseFloat(nuevoPrecio.toFixed(2));
-                if (nuevoPrecio > ultimaVela.high) ultimaVela.high = parseFloat(nuevoPrecio.toFixed(2));
-                if (nuevoPrecio < ultimaVela.low) ultimaVela.low = parseFloat(nuevoPrecio.toFixed(2));
-                if (tvCandleSeries) tvCandleSeries.update(ultimaVela);
-            } else {
-                const nuevaVela = {
-                    time: tiempoActual - (tiempoActual % 60),
-                    open: parseFloat(nuevoPrecio.toFixed(2)),
-                    high: parseFloat(nuevoPrecio.toFixed(2)),
-                    low: parseFloat(nuevoPrecio.toFixed(2)),
-                    close: parseFloat(nuevoPrecio.toFixed(2))
-                };
-                historialCandles.push(nuevaVela);
-                if (historialCandles.length > 300) historialCandles.shift();
-                if (tvCandleSeries) tvCandleSeries.update(nuevaVela);
+            const spread = buyRate / sellRate;
+            const netProfitBs = (amount * spread) - amount;
+            const profitUsd = netProfitBs / usdRate;
+
+            p2pTradesList.unshift({
+                id: Date.now(),
+                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                bank, amount, buyRate, sellRate, netProfitBs, profitUsd
+            });
+            localStorage.setItem('p2p_terminal_trades', JSON.stringify(p2pTradesList));
+            renderP2PTradesTable();
+            closeP2PModal();
+        }
+
+        function deleteP2PTrade(id) {
+            p2pTradesList = p2pTradesList.filter(t => t.id !== id);
+            localStorage.setItem('p2p_terminal_trades', JSON.stringify(p2pTradesList));
+            renderP2PTradesTable();
+        }
+
+        function renderP2PTradesTable() {
+            const tbody = document.getElementById('p2pTradesTableBody');
+            if(p2pTradesList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-500">No hay operaciones registradas aún.</td></tr>`;
+                return;
             }
-            localStorage.setItem('tv_historial_candles', JSON.stringify(historialCandles));
-        }
-
-        function actualizarVelaBinanceSegundoARegundo(nuevoPrecio) {
-            if (isNaN(nuevoPrecio)) return;
-            const tiempoActual = Math.floor(Date.now() / 1000);
-            const tiempoVela = tiempoActual - (tiempoActual % 60);
-
-            let ultimaVela = historialCandles[historialCandles.length - 1];
-
-            if (ultimaVela && ultimaVela.time === tiempoVela) {
-                ultimaVela.close = parseFloat(nuevoPrecio.toFixed(2));
-                if (nuevoPrecio > ultimaVela.high) ultimaVela.high = parseFloat(nuevoPrecio.toFixed(2));
-                if (nuevoPrecio < ultimaVela.low) ultimaVela.low = parseFloat(nuevoPrecio.toFixed(2));
-                if (tvCandleSeries) tvCandleSeries.update(ultimaVela);
-            } else {
-                const nuevaVela = {
-                    time: tiempoVela,
-                    open: parseFloat(nuevoPrecio.toFixed(2)),
-                    high: parseFloat(nuevoPrecio.toFixed(2)),
-                    low: parseFloat(nuevoPrecio.toFixed(2)),
-                    close: parseFloat(nuevoPrecio.toFixed(2))
-                };
-                historialCandles.push(nuevaVela);
-                if (historialCandles.length > 300) historialCandles.shift();
-                if (tvCandleSeries) tvCandleSeries.update(nuevaVela);
-            }
-            localStorage.setItem('tv_historial_candles', JSON.stringify(historialCandles));
-        }
-
-        [inputBCV, inputP2P, inputMonto, inputSaldoBsUsuario, inputTasaObjetivo, inputPctObjetivo].forEach(input => {
-            input.addEventListener('input', () => {
-                calcularSimulacion();
+            tbody.innerHTML = '';
+            p2pTradesList.forEach(t => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#1a233a]/40 transition">
+                        <td class="py-3 px-3 text-slate-300">${t.date}</td>
+                        <td class="py-3 px-3 font-semibold text-blue-400">${t.bank}</td>
+                        <td class="py-3 px-3 text-white">Bs. ${t.amount.toLocaleString('es-VE')}</td>
+                        <td class="py-3 px-3 text-emerald-400">Bs. ${t.buyRate.toFixed(2)}</td>
+                        <td class="py-3 px-3 text-rose-400">Bs. ${t.sellRate.toFixed(2)}</td>
+                        <td class="py-3 px-3 font-bold text-emerald-400">Bs. ${t.netProfitBs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3 px-3 font-bold text-amber-300">$ ${t.profitUsd.toFixed(2)}</td>
+                        <td class="py-3 px-3 text-right">
+                            <button onclick="deleteP2PTrade(${t.id})" class="text-slate-500 hover:text-rose-400 transition p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
             });
-        });
+        }
+
+        // Inicialización general
+        window.onload = function() {
+            updateInterventionSimulation();
+            initTradingViewChart();
+            initP2PApp();
+
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('syncClock').innerText = now.toLocaleTimeString();
+            }, 1000);
+        };
     </script>
 </body>
 </html>
