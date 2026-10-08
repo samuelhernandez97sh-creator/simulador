@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo de Arbitraje P2P | Sincronizado con Intervención</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #131b2e;
+            --border-color: #2a3954;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: #f3f4f6; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-6">
+
+    <header class="max-w-7xl w-full mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-[#131b2e] border border-[#2a3954] p-4 rounded-2xl shadow-xl">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 text-white p-2.5 rounded-xl font-bold text-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold text-white tracking-wide">Módulo Independiente de Arbitraje P2P</h1>
+                <p class="text-xs text-slate-400">Vinculado directamente a Tasas de Intervención Cambiaria y Binance P2P API</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs">
+            <div class="bg-[#0b0f19] px-3 py-2 rounded-xl border border-[#2a3954] text-right">
+                <span class="text-slate-400 block text-[10px]">Tasa Intervención / BCV Ref</span>
+                <span id="linkedBcvRate" class="font-bold text-emerald-400">Bs. 879,10</span>
+            </div>
+            <button onclick="syncWithInterventionModule()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl font-semibold transition flex items-center gap-2 shadow">
+                <i class="fa-solid fa-rotate" id="syncIcon"></i> Sincronizar API
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto space-y-6 flex-grow">
+        
+        <!-- Parámetros Globales P2P -->
+        <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2 class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Controles y Parámetros Globales P2P
+                </h2>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <span class="text-[10px] text-amber-400 font-bold block">Tasa Base Referencia ($)</span>
+                        <input type="number" id="p2pRefUsd" value="879.10" step="0.01" class="bg-[#0b0f19] text-amber-400 font-bold text-xs w-32 px-2 py-1.5 rounded-xl border border-[#2a3954] text-right">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulación Comparativa por Banco -->
+        <section>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells-large text-blue-500"></i> Simulación Cruzada por Banco (Comisión -0.25% Binance Aplicada)
+                </h3>
+                <span class="text-xs text-slate-400">Live Engine v2.6</span>
+            </div>
+            <div id="p2pCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Inyectado dinámicamente mediante JS -->
+            </div>
+        </section>
+
+        <!-- Order Books de BDV y Banesco -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[420px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-emerald-400 flex items-center gap-2 text-xs">
+                        <i class="fa-solid fa-building-columns"></i> Order Book: Banco de Venezuela (BDV)
+                    </h3>
+                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">En Línea</span>
+                </div>
+                <div class="overflow-y-auto flex-grow space-y-2 pr-1 custom-scrollbar" id="p2pBdvOrderBook"></div>
+            </div>
+
+            <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[420px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-rose-400 flex items-center gap-2 text-xs">
+                        <i class="fa-solid fa-building-columns"></i> Order Book: Banesco
+                    </h3>
+                    <span class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20">En Línea</span>
+                </div>
+                <div class="overflow-y-auto flex-grow space-y-2 pr-1 custom-scrollbar" id="p2pBanescoOrderBook"></div>
+            </div>
+        </div>
+
+        <!-- Bitácora de Operaciones P2P -->
+        <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div>
+                    <h3 class="font-bold text-white text-sm">Bitácora de Control y Ejecución P2P</h3>
+                    <p class="text-[11px] text-slate-400">Registra y audita cada ejecución de arbitraje completada</p>
+                </div>
+                <button onclick="openP2PModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow">
+                    <i class="fa-solid fa-plus text-white"></i> Registrar Operación
+                </button>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-[#2a3954] text-slate-400 text-[11px]">
+                            <th class="py-2.5 px-3">Fecha/Hora</th>
+                            <th class="py-2.5 px-3">Banco</th>
+                            <th class="py-2.5 px-3">Monto Invertido (Bs)</th>
+                            <th class="py-2.5 px-3">Compra (-0.25%)</th>
+                            <th class="py-2.5 px-3">Venta</th>
+                            <th class="py-2.5 px-3">Ganancia Neta (Bs)</th>
+                            <th class="py-2.5 px-3">Ganancia ($ Ref)</th>
+                            <th class="py-2.5 px-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="p2pTradesTableBody" class="divide-y divide-[#2a3954]/50">
+                        <tr><td colspan="8" class="text-center py-6 text-slate-500">No hay operaciones registradas aún.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Registrar Operación P2P -->
+    <div id="p2pModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#131b2e] border border-[#2a3954] w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <h3 class="text-base font-bold text-white mb-4">Registrar Operación P2P</h3>
+            <form id="p2pTradeForm" onsubmit="saveP2PTrade(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-400 mb-1">Banco Utilizado</label>
+                    <select id="modalBank" class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954]">
+                        <option value="BDV">Banco de Venezuela (BDV)</option>
+                        <option value="Banesco">Banesco</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-400 mb-1">Monto Invertido (Bs.S)</label>
+                    <input type="number" id="modalAmount" required class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954]" placeholder="500000">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-slate-400 mb-1">Tasa Compra Base</label>
+                        <input type="number" id="modalBuyRate" step="0.01" required class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954]">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-400 mb-1">Tasa Venta</label>
+                        <input type="number" id="modalSellRate" step="0.01" required class="w-full bg-[#0b0f19] text-white px-3 py-2 rounded-xl border border-[#2a3954]">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeP2PModal()" class="bg-[#0b0f19] hover:bg-[#1a233a] text-slate-300 px-4 py-2 rounded-xl font-semibold border border-[#2a3954]">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Tasa por defecto compartida de la Intervención Cambiaria (BCV)
+        let SHARED_BCV_RATE = 879.10;
+
+        let p2pCardAmounts = { BDV: 500000, Banesco: 500000 };
+        let p2pCache = {
+            BDV: {
+                buyers: [
+                    { name: 'FastExchangeVE', rate: 1020.99, min: 10000, max: 2000000 },
+                    { name: 'CryptoCaracas_P2P', rate: 1019.50, min: 250000, max: 5000000 }
+                ],
+                sellers: [
+                    { name: 'ComercialGlobal', rate: 1016.21, min: 5000, max: 1500000 },
+                    { name: 'TasaExpress', rate: 1015.00, min: 300000, max: 3000000 }
+                ]
+            },
+            Banesco: {
+                buyers: [
+                    { name: 'CryptoExpress', rate: 1020.89, min: 50000, max: 3000000 },
+                    { name: 'BanescoVipTrader', rate: 1019.80, min: 100000, max: 6000000 }
+                ],
+                sellers: [
+                    { name: 'PagoRapidoVE', rate: 1018.99, min: 20000, max: 2500000 },
+                    { name: 'CaracasLiquidez', rate: 1017.50, min: 500000, max: 5000000 }
+                ]
+            }
+        };
+        let p2pTradesList = JSON.parse(localStorage.getItem('p2p_standalone_trades')) || [];
+
+        function initP2PModule() {
+            // Intentar leer la tasa BCV compartida si viene de localStorage del módulo padre / principal
+            const parentBcv = localStorage.getItem('global_bcv_rate');
+            if(parentBcv && !isNaN(parseFloat(parentBcv))) {
+                SHARED_BCV_RATE = parseFloat(parentBcv);
+            }
+
+            document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(2);
+            document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(2)}`;
+
+            updateP2PCalculations();
+            renderP2POrderBooks();
+            renderP2PTradesTable();
+
+            document.getElementById('p2pRefUsd').addEventListener('input', function() {
+                SHARED_BCV_RATE = parseFloat(this.value) || SHARED_BCV_RATE;
+                document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(2)}`;
+                updateP2PCalculations();
+            });
+        }
+
+        // Función para sincronizar con la API o módulo de Intervención Cambiaria
+        function syncWithInterventionModule() {
+            const icon = document.getElementById('syncIcon');
+            icon.classList.add('fa-spin');
+            
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                // Simulación de lectura de API de intervención en tiempo real o localStorage compartido
+                const liveBcv = localStorage.getItem('global_bcv_rate') || (879.10 + (Math.random() * 0.5 - 0.25)).toFixed(2);
+                SHARED_BCV_RATE = parseFloat(liveBcv);
+                
+                document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(2);
+                document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(2)}`;
+
+                // Variación aleatoria leve en order books simulando Binance P2P API live feed
+                ['BDV', 'Banesco'].forEach(bKey => {
+                    p2pCache[bKey].buyers.forEach(b => b.rate = parseFloat((b.rate + (Math.random() * 0.4 - 0.2)).toFixed(2)));
+                    p2pCache[bKey].sellers.forEach(s => s.rate = parseFloat((s.rate + (Math.random() * 0.4 - 0.2)).toFixed(2)));
+                });
+
+                updateP2PCalculations();
+                renderP2POrderBooks();
+            }, 600);
+        }
+
+        function updateP2PCardAmount(bankName, val) {
+            const num = parseFloat(val);
+            if(!isNaN(num)) {
+                p2pCardAmounts[bankName] = num;
+                updateP2PCalculations();
+            }
+        }
+
+        function updateP2PCalculations() {
+            const usdRate = SHARED_BCV_RATE;
+            const gridContainer = document.getElementById('p2pCardsGrid');
+            gridContainer.innerHTML = '';
+
+            const banksConfig = [
+                { key: 'BDV', name: 'BANCO DE VENEZUELA (BDV)', badgeBg: 'bg-emerald-500/10 text-emerald-400' },
+                { key: 'Banesco', name: 'BANESCO', badgeBg: 'bg-rose-500/10 text-rose-400' }
+            ];
+
+            banksConfig.forEach(bankInfo => {
+                const amountBs = p2pCardAmounts[bankInfo.key];
+                const bankData = p2pCache[bankInfo.key];
+
+                const bestBuy = bankData.buyers[0];
+                const bestSell = bankData.sellers[0];
+
+                const rawBuyRate = bestBuy.rate;
+                const effectiveBuyRate = rawBuyRate * (1 - 0.0025); // Comisión Binance -0.25%
+                const sellRate = bestSell.rate;
+
+                const spread = (effectiveBuyRate / sellRate).toFixed(4);
+                const totalRetornoBs = amountBs * parseFloat(spread);
+                const netProfitBs = totalRetornoBs - amountBs;
+                const profitUsd = netProfitBs / usdRate;
+                const isProfitable = netProfitBs > 0;
+
+                const cardHtml = `
+                    <div class="bg-[#131b2e] border ${isProfitable ? 'border-[#2a3954]' : 'border-rose-900/40'} rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="text-center border-b border-[#2a3954] pb-3 mb-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] uppercase font-bold text-slate-400">MONTO INVERTIDO (BS.S)</span>
+                                    <span class="text-[10px] font-bold py-0.5 px-2 rounded ${bankInfo.badgeBg}">${bankInfo.key}</span>
+                                </div>
+                                <div class="relative mt-1">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs">Bs</span>
+                                    <input type="number" value="${amountBs}" step="10000" oninput="updateP2PCardAmount('${bankInfo.key}', this.value)" class="w-full bg-[#0b0f19] text-white font-bold text-sm pl-9 pr-3 py-1.5 rounded-xl border border-[#2a3954] text-center">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 text-center my-3 bg-[#0b0f19] p-3 rounded-xl border border-[#2a3954] text-xs">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-medium">COMPRA (-0.25%)</span>
+                                    <span class="text-emerald-400 font-bold text-sm">Bs. ${effectiveBuyRate.toFixed(2)}</span>
+                                    <span class="text-[9px] text-slate-500 block">Base: ${rawBuyRate.toFixed(2)}</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-medium">VENDE (MÁS CARO)</span>
+                                    <span class="text-rose-400 font-bold text-sm">Bs. ${sellRate.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center my-3">
+                                <span class="text-[9px] text-slate-400 uppercase tracking-widest block">SPREAD NETO</span>
+                                <span class="text-xs font-bold text-white bg-[#0b0f19] px-3 py-0.5 rounded-full inline-block mt-0.5 border border-[#2a3954]">${spread}</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-center my-3 text-xs">
+                                <div class="bg-[#0b0f19]/40 p-2 rounded-xl border border-[#2a3954]">
+                                    <span class="text-[9px] text-slate-400 block">MONTO COMPRA</span>
+                                    <span class="text-white font-semibold">Bs. ${amountBs.toLocaleString('es-VE', {maximumFractionDigits:0})}</span>
+                                </div>
+                                <div class="bg-[#0b0f19]/40 p-2 rounded-xl border border-[#2a3954]">
+                                    <span class="text-[9px] text-slate-400 block">TOTAL RETORNO</span>
+                                    <span class="text-emerald-300 font-semibold">Bs. ${totalRetornoBs.toLocaleString('es-VE', {maximumFractionDigits:0})}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-[#2a3954] text-center bg-[#0b0f19] p-3 rounded-xl">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase block">GANANCIA NETA</span>
+                            <div class="text-sm font-bold ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}">
+                                Bs. ${netProfitBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </div>
+                            <div class="text-[11px] font-semibold text-amber-300 mt-0.5">
+                                $ ${profitUsd.toFixed(2)} USD (Ref Intervención)
+                            </div>
+                        </div>
+                    </div>
+                `;
+                gridContainer.innerHTML += cardHtml;
+            });
+        }
+
+        function renderP2POrderBooks() {
+            renderBankOrderBook('BDV', document.getElementById('p2pBdvOrderBook'));
+            renderBankOrderBook('Banesco', document.getElementById('p2pBanescoOrderBook'));
+        }
+
+        function renderBankOrderBook(bankName, container) {
+            container.innerHTML = '';
+            const data = p2pCache[bankName];
+            let html = `<div class="text-[11px] font-semibold text-slate-400 mb-1">Comerciantes de Compra:</div>`;
+            data.buyers.forEach(b => {
+                const effectiveRate = b.rate * (1 - 0.0025);
+                html += `
+                    <div class="bg-[#0b0f19] p-2.5 rounded-xl border border-[#2a3954] flex justify-between items-center text-xs mb-2">
+                        <div>
+                            <div class="font-bold text-white flex items-center gap-1">
+                                ${b.name} <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded">Compra</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Límites: Bs. ${b.min.toLocaleString()} - ${b.max.toLocaleString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-emerald-400 font-bold text-sm">Bs. ${effectiveRate.toFixed(2)}</div>
+                            <span class="text-[9px] text-slate-500">Base: ${b.rate.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `<div class="text-[11px] font-semibold text-slate-400 mt-3 mb-1">Comerciantes de Venta:</div>`;
+            data.sellers.forEach(s => {
+                html += `
+                    <div class="bg-[#0b0f19] p-2.5 rounded-xl border border-[#2a3954] flex justify-between items-center text-xs mb-2">
+                        <div>
+                            <div class="font-bold text-white flex items-center gap-1">
+                                ${s.name} <span class="text-[9px] bg-rose-500/20 text-rose-400 px-1 rounded">Venta</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Límites: Bs. ${s.min.toLocaleString()} - ${s.max.toLocaleString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-rose-400 font-bold text-sm">Bs. ${s.rate.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function openP2PModal() { document.getElementById('p2pModal').classList.remove('hidden'); }
+        function closeP2PModal() { document.getElementById('p2pModal').classList.add('hidden'); }
+
+        function saveP2PTrade(e) {
+            e.preventDefault();
+            const bank = document.getElementById('modalBank').value;
+            const amount = parseFloat(document.getElementById('modalAmount').value);
+            const buyRate = parseFloat(document.getElementById('modalBuyRate').value) * (1 - 0.0025);
+            const sellRate = parseFloat(document.getElementById('modalSellRate').value);
+            const usdRate = SHARED_BCV_RATE;
+
+            const spread = buyRate / sellRate;
+            const netProfitBs = (amount * spread) - amount;
+            const profitUsd = netProfitBs / usdRate;
+
+            p2pTradesList.unshift({
+                id: Date.now(),
+                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                bank, amount, buyRate, sellRate, netProfitBs, profitUsd
+            });
+            localStorage.setItem('p2p_standalone_trades', JSON.stringify(p2pTradesList));
+            renderP2PTradesTable();
+            closeP2PModal();
+        }
+
+        function renderP2PTradesTable() {
+            const tbody = document.getElementById('p2pTradesTableBody');
+            if(p2pTradesList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-500">No hay operaciones registradas aún.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            p2pTradesList.forEach(t => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#1a233a]/40 transition">
+                        <td class="py-3 px-3 text-slate-300">${t.date}</td>
+                        <td class="py-3 px-3 font-semibold text-blue-400">${t.bank}</td>
+                        <td class="py-3 px-3 text-white">Bs. ${t.amount.toLocaleString('es-VE')}</td>
+                        <td class="py-3 px-3 text-emerald-400">Bs. ${t.buyRate.toFixed(2)}</td>
+                        <td class="py-3 px-3 text-rose-400">Bs. ${t.sellRate.getText ? '' : ''}Bs. ${t.sellRate.toFixed(2)}</td>
+                        <td class="py-3 px-3 font-bold text-emerald-400">Bs. ${t.netProfitBs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3 px-3 font-bold text-amber-300">$ ${t.profitUsd.toFixed(2)}</td>
+                        <td class="py-3 px-3 text-right">
+                            <button onclick="p2pTradesList = p2pTradesList.filter(x => x.id !== ${t.id}); localStorage.setItem('p2p_standalone_trades', JSON.stringify(p2pTradesList)); renderP2PTradesTable();" class="text-slate-500 hover:text-rose-400 transition p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.onload = function() {
+            initP2PModule();
+        };
+    </script>
+</body>
+</html>
