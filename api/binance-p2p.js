@@ -1,19 +1,6 @@
 export default async function handler(req, res) {
-    // Permitir CORS por seguridad si lo consultas desde Excel u otros lados
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
     try {
-        // Recibimos amount, bank y type por parámetros URL (Ej: ?amount=500000&bank=Banesco&type=BUY)
         const { amount, bank, type } = req.query;
-
-        // Por defecto: BancoDeVenezuela y tipo BUY si no se especifican
-        const bancoSeleccionado = bank ? bank : "BancoDeVenezuela";
-        const tipoOperacion = type ? type.toUpperCase() : "BUY"; 
 
         const response = await fetch('https://p2p.binance.com/bapi/c2c/v1/friendly/c2c/adv/search', {
             method: 'POST',
@@ -27,13 +14,13 @@ export default async function handler(req, res) {
                 "merchantCheck": false,
                 "page": 1,
                 "rows": 5,
-                "tradeType": tipoOperacion, // Dinámico: BUY o SELL
+                "tradeType": type ? type : "SELL", // Dinámico (BUY o SELL), por defecto SELL como lo tenías
                 "transAmount": amount ? String(amount) : "",
-                "payTypes": [bancoSeleccionado] // Dinámico: BancoDeVenezuela, Banesco, etc.
+                "payTypes": [bank ? bank : "BancoDeVenezuela"] // Dinámico según el parámetro
             })
         });
 
-        if (!response.ok) throw new Error('Binance no respondió correctamente');
+        if (!response.ok) throw new Error('Binance no respondió');
         const data = await response.json();
 
         let precioReal = 0;
@@ -41,12 +28,7 @@ export default async function handler(req, res) {
             precioReal = parseFloat(data.data[0].adv.price);
         }
 
-        return res.status(200).json({ 
-            banco: bancoSeleccionado,
-            tipo: tipoOperacion,
-            monto: amount || "General",
-            precio_binance_p2p: precioReal 
-        });
+        return res.status(200).json({ precio_binance_p2p: precioReal });
 
     } catch (error) {
         return res.status(500).json({ error: error.message });
