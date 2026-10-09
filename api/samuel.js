@@ -22,9 +22,9 @@ module.exports = async (req, res) => {
                 "merchantCheck": false,
                 "page": 1,
                 "rows": 5,
-                "tradeType": "",
+                "tradeType": "SELL",
                 "transAmount": amount ? String(amount) : "",
-                "payTypes": [""]
+                "payTypes": ["BancoDeVenezuela"]
             })
         });
 
