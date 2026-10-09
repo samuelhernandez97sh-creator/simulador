@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
                 "page": 1,
                 "rows": 5,
                 "tradeType": "SELL",
-                "transAmount": amount ? String(amount) : "",
+                "transAmount": amount ? String(amount) : "500000",
                 "payTypes": ["BancoDeVenezuela"]
             })
         });
