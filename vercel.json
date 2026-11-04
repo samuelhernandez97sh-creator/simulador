@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "api/*.js": { "maxDuration": 15 }
+  },
+  "regions": ["gru1"]
+}
