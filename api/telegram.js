@@ -1,4 +1,4 @@
-// api/telegram.js — el token y el chat id viven SOLO en Vercel > Settings > Environment Variables
+// api/telegram.js — token y chat id SOLO en Vercel > Settings > Environment Variables
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -11,10 +11,13 @@ module.exports = async (req, res) => {
   if (!token || !chat_id) return res.status(500).json({ ok: false, error: 'Faltan variables de entorno' });
 
   const text = (req.body && req.body.text) || '';
-  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const enviar = (extra) => fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id, text })
+    body: JSON.stringify({ chat_id, text, ...extra })
   });
+
+  let r = await enviar({ parse_mode: 'Markdown' });
+  if (!r.ok) r = await enviar({}); // si el Markdown falla, reenvía en texto plano
   return res.status(r.ok ? 200 : 502).json({ ok: r.ok });
 };
