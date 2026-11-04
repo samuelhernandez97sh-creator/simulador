@@ -1,90 +1,88 @@
-export default async function handler(req, res) {
+// api/bcv.js  — Tasa oficial BCV (consulta varias fuentes y valida)
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const fetchOptions = {
+  const opts = {
     method: 'GET',
-    cache: 'no-store',
-    headers: { 
+    headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+      'Accept': 'text/html,application/json'
+    },
+    signal: AbortSignal.timeout(6000)
+  };
+
+  // Convierte "1.234,56" / "737,88" / "737.88" a número
+  const aNumero = (txt) => {
+    let s = String(txt).trim();
+    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (s.includes(',')) s = s.replace(',', '.');
+    return parseFloat(s);
+  };
+
+  const fuentes = {
+    dolarapi: async () => {
+      const r = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', opts);
+      if (!r.ok) throw new Error('dolarapi ' + r.status);
+      const d = await r.json();
+      return aNumero(d.promedio ?? d.venta ?? d.compra);
+    },
+    exchangemonitor: async () => {
+      const r = await fetch('https://p2p.exchangemonitor.net/api/v1/ve/dolar', opts);
+      if (!r.ok) throw new Error('exchangemonitor ' + r.status);
+      const d = await r.json();
+      return aNumero(d.bcv.precio);
+    },
+    bcv_oficial: async () => {
+      const r = await fetch('https://www.bcv.org.ve/glosario/cambio-oficial', opts);
+      if (!r.ok) throw new Error('bcv ' + r.status);
+      const html = await r.text();
+      // El bloque del dólar: <div id="dolar"> ... <strong> 737,88 </strong>
+      const m = html.match(/id=["']dolar["'][\s\S]*?<strong[^>]*>\s*([\d.,]+)\s*<\/strong>/i);
+      if (!m) throw new Error('estructura bcv no encontrada');
+      return aNumero(m[1]);
+    },
+    tcambio: async () => {
+      const r = await fetch('https://tcambio.app/', opts);
+      if (!r.ok) throw new Error('tcambio ' + r.status);
+      const html = await r.text();
+      const m = html.match(/Bs\.?S?\s*<strong>\s*([\d.,]+)\s*<\/strong>/i);
+      if (!m) throw new Error('estructura tcambio no encontrada');
+      return aNumero(m[1]);
     }
   };
 
-  const fetchTCambio = async () => {
-    const response = await fetch('https://tcambio.app/', fetchOptions);
-    if (!response.ok) throw new Error('tcambio.app no disponible');
-    const html = await response.text();
-    
-    // Expresión regular ajustada para capturar números con punto o coma decimal (ej: 737.88 o 737,88)
-    const match = html.match(/id=["']mount["'][\s\S]*?<strong>([\d]+[.,][\d]+)<\/strong>/i) || html.match(/Bs\.S\s*<strong>([\d]+[.,][\d]+)<\/strong>/i);
-    
-    if (match && match[1]) {
-      // Reemplaza la coma por un punto para que parseFloat la reconozca correctamente como decimal
-      const valorLimpio = match[1].trim().replace(',', '.');
-      return { bcv: parseFloat(valorLimpio), source: 'tcambio_app' };
+  const nombres = Object.keys(fuentes);
+  const resultados = await Promise.allSettled(nombres.map(n => fuentes[n]()));
+
+  const validos = [];
+  const errores = {};
+  resultados.forEach((r, i) => {
+    if (r.status === 'fulfilled' && Number.isFinite(r.value) && r.value > 1) {
+      validos.push({ source: nombres[i], bcv: r.value });
+    } else {
+      errores[nombres[i]] = r.status === 'rejected' ? r.reason.message : 'valor inválido';
     }
-    throw new Error('Estructura tcambio.app no encontrada');
-  };
+  });
 
-  const fetchBCV = async () => {
-    const response = await fetch('https://www.bcv.org.ve/glosario/cambio-oficial', fetchOptions);
-    if (!response.ok) throw new Error('BCV no disponible');
-    const html = await response.text();
-    const match = html.match(/class=["']strong-tb["']>([\d,.]+)</i) || html.match(/id=["']dolar["'][\s\S]*?([\d,.]+)/i);
-    if (match && match[1]) {
-      return { bcv: parseFloat(match[1].trim().replace(/\./g, '').replace(',', '.')), source: 'bcv_oficial' };
-    }
-    throw new Error('Estructura BCV no encontrada');
-  };
-
-  const fetchExchangeMonitor = async () => {
-    const response = await fetch('https://p2p.exchangemonitor.net/api/v1/ve/dolar', fetchOptions);
-    if (!response.ok) throw new Error('ExchangeMonitor falló');
-    const data = await response.json();
-    if (data && data.bcv && data.bcv.precio) {
-      return { bcv: parseFloat(data.bcv.precio), source: 'exchange_monitor' };
-    }
-    throw new Error('Datos inválidos en ExchangeMonitor');
-  };
-
-  const fetchDolarApi = async () => {
-    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', fetchOptions);
-    if (!response.ok) throw new Error('DolarApi falló');
-    const data = await response.json();
-    if (data && data.promedio) {
-      return { bcv: parseFloat(data.promedio), source: 'dolar_api' };
-    }
-    throw new Error('Datos inválidos en DolarApi');
-  };
-
-  try {
-    const resultados = await Promise.allSettled([
-      fetchTCambio(), 
-      fetchBCV(), 
-      fetchExchangeMonitor(), 
-      fetchDolarApi()
-    ]);
-    
-    const exitosos = resultados.filter(r => r.status === 'fulfilled').map(r => r.value);
-
-    if (exitosos.length === 0) {
-      throw new Error('Todas las fuentes fallaron');
-    }
-
-    const mejorTasa = exitosos.find(r => r.source === 'tcambio_app') || 
-                      exitosos.reduce((max, actual) => actual.bcv > max.bcv ? actual : max, exitosos[0]);
-
-    return res.status(200).json({
-      success: true,
-      bcv: mejorTasa.bcv,
-      source: mejorTasa.source
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+  if (!validos.length) {
+    return res.status(502).json({ success: false, error: 'Todas las fuentes fallaron', detalle: errores });
   }
-}
+
+  // Descarta valores atípicos (>5% lejos de la mediana) y toma el más alto
+  // (el BCV publica primero la tasa del día siguiente, que es la mayor)
+  const ordenados = validos.map(v => v.bcv).sort((a, b) => a - b);
+  const mediana = ordenados[Math.floor(ordenados.length / 2)];
+  const buenos = validos.filter(v => Math.abs(v.bcv - mediana) / mediana <= 0.05);
+  const mejor = buenos.reduce((a, b) => (b.bcv > a.bcv ? b : a));
+
+  return res.status(200).json({
+    success: true,
+    bcv: mejor.bcv,
+    source: mejor.source,
+    fuentes: validos,
+    errores
+  });
+};
