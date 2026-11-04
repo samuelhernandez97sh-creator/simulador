@@ -37,7 +37,9 @@ module.exports = async (req, res) => {
     const j = await r.json();
     if (!Array.isArray(j.data)) throw new Error('Respuesta inesperada de Binance');
 
-    let ads = j.data;
+    // Excluye anuncios patrocinados/promocionados si Binance los marca
+    const esPromo = (a) => Object.entries(a.adv || {}).some(([k, v]) => /promot|sponsor/i.test(k) && v && v !== 'false');
+    let ads = j.data.filter(a => !esPromo(a));
 
     // Solo anuncios que realmente aceptan el método de pago pedido (si hay datos para verificarlo)
     const conMetodo = ads.filter(a => (a.adv.tradeMethods || []).some(m => m.identifier === pay));
