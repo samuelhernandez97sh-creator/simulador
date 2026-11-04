@@ -782,10 +782,11 @@
     </div>
 
     <script>
-        const VERCEL_URL = 'simulador-dusky-zeta.vercel.app';
-        const TELEGRAM_BOT_TOKEN = '8946597702:AAEzSTw_-rNIWEyUtISWAxrcumqdwbylKWI';
-        const TELEGRAM_CHAT_ID = '304678344';
-        
+        const VERCEL_URL = 'https://simulador-lemon-one.vercel.app';
+        // Monto en Bs para filtrar Binance P2P (0 = usar el costo calculado del monto base USD)
+        const MONTO_FILTRO_P2P_BS = 5000000;
+        const METODO_PAGO_P2P = 'BancoDeVenezuela';
+        const         
         let tvChart = null;
         let tvCandleSeries = null;
         let historialCandles = JSON.parse(localStorage.getItem('tv_historial_candles')) || generarVelasInicialesFicticias();
@@ -867,7 +868,7 @@
                 const response = await fetch(`${VERCEL_URL}/api/send-telegram`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: TELEGRAM_BOT_TOKEN, chat_id: TELEGRAM_CHAT_ID, text: texto })
+                    body: JSON.stringify({ text: texto })
                 });
                 if (!response.ok) {
                     console.warn("Telegram API warning status:", response.status);
@@ -1129,84 +1130,37 @@
         }
 
         async function obtenerTasasAPI() {
+            const estado = document.getElementById('txt-ultima-hora');
             try {
-                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`);
+                // 1) BCV
+                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`, { cache: 'no-store' });
                 const dataBCV = await resBCV.json();
-                
-                if (!dataBCV.success) throw new Error("Error BCV");
-                const tasaBCV = dataBCV.bcv;
-                inputBCV.value = tasaBCV;
+                if (!dataBCV.success || !(dataBCV.bcv > 0)) throw new Error('BCV: ' + (dataBCV.error || 'sin dato'));
+                inputBCV.value = dataBCV.bcv.toFixed(2);
 
+                // 2) Binance P2P (filtrado por monto en Bs y Banco de Venezuela)
                 const montoUSD = parseFloat(inputMonto.value) || 500;
-                const costoTotalBanco = montoUSD * (tasaBCV * 1.005);
-                const montoBsFiltro = Math.round(costoTotalBanco);
+                const montoBsFiltro = MONTO_FILTRO_P2P_BS > 0
+                    ? MONTO_FILTRO_P2P_BS
+                    : Math.round(montoUSD * dataBCV.bcv * 1.005);
 
-                const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`);
-                const dataBinance = await resBinanceVivo.json();
-                
-                if(dataBinance.precio_binance_p2p) {
-                    // Variación ultra-fluida segundo a segundo simulada en vivo si cambia la API
-                    const precioNuevo = parseFloat(dataBinance.precio_binance_p2p);
-                    const precioActual = parseFloat(inputP2P.value) || precioNuevo;
-                    // Fluctuación en vivo cada segundo basada en micro-tendencias
-                    const deltaVivo = precioActual + (Math.random() * 0.4 - 0.2);
-                    inputP2P.value = deltaVivo.toFixed(2);
-                }
+                const resP2P = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}&pay=${METODO_PAGO_P2P}`, { cache: 'no-store' });
+                const dataP2P = await resP2P.json();
+                if (!(dataP2P.precio_binance_p2p > 0)) throw new Error('P2P: ' + (dataP2P.error || 'sin dato'));
+                inputP2P.value = parseFloat(dataP2P.precio_binance_p2p).toFixed(2);
 
-                if (dataBinance.ultimo_mensaje_canal) {
-                    procesarMensajeCanal(dataBinance.ultimo_mensaje_canal);
-                }
-
+                if (dataP2P.ultimo_mensaje_canal) procesarMensajeCanal(dataP2P.ultimo_mensaje_canal);
+                if (estado) estado.style.color = '';
             } catch (error) {
-                // Simulación dinámica segundo a segundo si hay latencia de red
-                const currentVal = parseFloat(inputP2P.value) || 840.0;
-                inputP2P.value = (currentVal + (Math.random() * 0.6 - 0.3)).toFixed(2);
+                console.error('Error obteniendo tasas:', error);
+                if (estado) estado.style.color = '#ef4444';
+                txtUltimaHora.textContent = 'Error: ' + error.message;
+                return; // no inventamos precios
             } finally {
                 calcularSimulacion();
-                const ahora = new Date();
-                const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                txtUltimaHora.textContent = `Sync Real-Time: ${horaActual}`;
             }
-        }
-
-        async function obtenerTasasAPI() {
-            try {
-                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`).catch(() => null);
-                if (resBCV && resBCV.ok) {
-                    const dataBCV = await resBCV.json();
-                    if (dataBCV && dataBCV.success) {
-                        inputBCV.value = dataBCV.bcv;
-                    }
-                }
-
-                const tasaBCVVal = parseFloat(inputBCV.value) || 36.5;
-                const montoUSD = parseFloat(inputMonto.value) || 500;
-                const costoTotalBanco = montoUSD * (tasaBCVVal * 1.005);
-                const montoBsFiltro = Math.round(costoTotalBanco);
-
-                const resBinanceVivo = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}`).catch(() => null);
-                if (resBinanceVivo && resBinanceVivo.ok) {
-                    const dataBinance = await resBinanceVivo.json();
-                    if(dataBinance && dataBinance.precio_binance_p2p) {
-                        inputP2P.value = dataBinance.precio_binance_p2p;
-                    }
-                    if (dataBinance && dataBinance.ultimo_mensaje_canal) {
-                        procesarMensajeCanal(dataBinance.ultimo_mensaje_canal);
-                    }
-                } else {
-                    // Fallback simulado fluido si el servidor externo no responde en el preview
-                    const currentVal = parseFloat(inputP2P.value) || 840.0;
-                    inputP2P.value = (currentVal + (Math.random() * 0.4 - 0.2)).toFixed(2);
-                }
-
-            } catch (error) {
-                console.warn("Aviso: Ejecutando en modo autónomo/simulado por restricciones de red del entorno de previsualización.");
-            } finally {
-                calcularSimulacion();
-                const ahora = new Date();
-                const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                txtUltimaHora.textContent = `Sync: ${horaActual}`;
-            }
+            const horaActual = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            txtUltimaHora.textContent = `Sync: ${horaActual}`;
         }
 
         function inicializarGraficaTradingView() {
