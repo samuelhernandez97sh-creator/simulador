@@ -549,6 +549,10 @@
         .floating-alert.show {
             transform: translateX(-50%) translateY(0);
         }
+        .nav-tabs { display:flex; gap:8px; margin-bottom:16px; }
+        .nav-tab { padding:9px 18px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-muted); font-size:13px; font-weight:600; text-decoration:none; }
+        .nav-tab:hover { color:var(--text-main); }
+        .nav-tab.active { background:var(--accent-blue); border-color:var(--accent-blue); color:#fff; }
     </style>
 </head>
 <body>
@@ -560,6 +564,10 @@
     </div>
 
     <div class="container">
+        <div class="nav-tabs">
+            <a href="index.html" class="nav-tab active">📈 Intervención</a>
+            <a href="arbitraje.html" class="nav-tab">🔀 Arbitraje</a>
+        </div>
         <div class="header">
             <h1>Terminal Arbitraje Pro</h1>
             <div class="header-status-box">
@@ -615,7 +623,7 @@
                     <div class="input-group">
                         <label class="input-label">📈 % Ganancia Alarma</label>
                         <div class="input-wrapper">
-                            <input type="number" id="input-pct-objetivo" class="input-field" step="0.1" value="5.0" placeholder="Ej: 5">
+                            <input type="number" id="input-pct-objetivo" class="input-field" step="0.1" value="10" placeholder="0 = sin alarma">
                             <span class="input-prefix" style="margin-left:4px; font-size:14px;">%</span>
                         </div>
                     </div>
@@ -644,8 +652,7 @@
                     <div class="input-group">
                         <label class="input-label">Comisión Tarjeta</label>
                         <div class="commission-selector">
-                            <button class="com-btn active" data-fee="1.5">1.5%</button>
-                            <button class="com-btn" data-fee="2.5">2.5%</button>
+                            <button class="com-btn active" data-fee="2.5">2.5%</button>
                         </div>
                     </div>
                 </div>
@@ -661,7 +668,7 @@
                     <div class="timeline-item">
                         <div class="icon-circle">💳</div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Recargas con tarjeta <span id="label-fee-tarjeta">-1.5%</span></div>
+                            <div class="timeline-title">Recargas con tarjeta <span id="label-fee-tarjeta">-2.5%</span></div>
                             <div class="timeline-value" id="txt-paso2">$0,00 → $0,00</div>
                         </div>
                     </div>
@@ -784,7 +791,7 @@
     <script>
         const VERCEL_URL = 'https://simulador-lemon-one.vercel.app';
         // Monto en Bs para filtrar Binance P2P (0 = usar el costo calculado del monto base USD)
-        const MONTO_FILTRO_P2P_BS = 5000000;
+        const MONTO_FILTRO_P2P_BS = 500000;
         const METODO_PAGO_P2P = 'BancoDeVenezuela';
         let tvChart = null;
         let tvCandleSeries = null;
@@ -794,11 +801,12 @@
         
         let maxMargenSession = -999;
         let minMargenSession = 999;
-        let comisionTarjetaSeleccionada = 1.5;
+        let comisionTarjetaSeleccionada = 2.5;
         
         let estadoBdvAnterior = "";
         let estadoTesoroAnterior = "";
 
+        let primeraEvaluacionAlertas = true;
         let alertaPctEnviada = false;
         let alertaTasaEnviada = false;
 
@@ -811,6 +819,16 @@
         const inputTasaObjetivo = document.getElementById('input-tasa-objetivo');
         const inputPctObjetivo = document.getElementById('input-pct-objetivo');
         const txtUsdEquivalente = document.getElementById('txt-usd-equivalente');
+
+        // Recordar la alarma entre visitas (cada dispositivo guarda la suya)
+        try {
+            const pctGuardado = localStorage.getItem('alarma_pct');
+            const tasaGuardada = localStorage.getItem('alarma_tasa');
+            if (pctGuardado !== null) inputPctObjetivo.value = pctGuardado;
+            if (tasaGuardada !== null) inputTasaObjetivo.value = tasaGuardada;
+            inputPctObjetivo.addEventListener('input', () => localStorage.setItem('alarma_pct', inputPctObjetivo.value));
+            inputTasaObjetivo.addEventListener('input', () => localStorage.setItem('alarma_tasa', inputTasaObjetivo.value));
+        } catch (e) {}
 
         const txtUltimaHora = document.getElementById('txt-ultima-hora');
         const btnPermiso = document.getElementById('btn-permiso');
@@ -864,7 +882,7 @@
 
         async function enviarNotificacionTelegram(texto) {
             try {
-                const response = await fetch(`${VERCEL_URL}/api/send-telegram`, {
+                const response = await fetch(`${VERCEL_URL}/api/telegram`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: texto })
@@ -905,16 +923,6 @@
                 e.target.classList.add('active');
                 temporalidadActual = e.target.dataset.tf;
                 filtrarYActualizarGrafica();
-            });
-        });
-
-        document.querySelectorAll('.com-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.com-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                comisionTarjetaSeleccionada = parseFloat(e.target.dataset.fee);
-                labelFeeTarjeta.textContent = `-${comisionTarjetaSeleccionada}%`;
-                calcularSimulacion();
             });
         });
 
@@ -962,6 +970,9 @@
                     actualizarVelaBinanceSegundoARegundo(precioActual);
                 }
 
+                contadorCanal++;
+                if (contadorCanal >= 15) { contadorCanal = 0; leerCanalTelegram(); }
+
                 contadorSegundosAPI++;
                 if (contadorSegundosAPI >= 5) {
                     contadorSegundosAPI = 0;
@@ -971,29 +982,27 @@
         };
         worker.postMessage('start');
 
-        function procesarMensajeCanal(textoUltimoMensaje) {
+        function procesarMensajeCanal(textoUltimoMensaje, silencioso) {
             if (!textoUltimoMensaje) return;
             txtUltimoMensaje.textContent = textoUltimoMensaje;
             const textoUpper = textoUltimoMensaje.toUpperCase();
+            const abierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN DIGITAL");
+            const cerrado = textoUpper.includes("CERRADA") || textoUpper.includes("CERRADO") || textoUpper.includes("FINALIZADA");
 
-            const esBdv = textoUpper.includes("BDV");
-            if (esBdv) {
-                const bdvAbierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN DIGITAL");
-                const bdvCerrado = textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA");
-
-                if (bdvAbierto && !bdvCerrado) {
+            if (textoUpper.includes("BDV")) {
+                if (abierto && !cerrado) {
                     statusBdv.textContent = "ABIERTO";
                     statusBdv.className = "bank-status-val open";
-                    if (estadoBdvAnterior !== "ABIERTO") {
+                    if (estadoBdvAnterior !== "ABIERTO" && !silencioso) {
                         registrarEnHistorial("🟢 BDV Abrió intervención");
                         dispararAlertaVisualSonora("🚨 ¡BDV ABIERTO!", textoUltimoMensaje);
                         enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN BDV ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                        estadoBdvAnterior = "ABIERTO";
                     }
-                } else if (bdvCerrado) {
+                    estadoBdvAnterior = "ABIERTO";
+                } else if (cerrado) {
                     statusBdv.textContent = "CERRADO";
                     statusBdv.className = "bank-status-val";
-                    if (estadoBdvAnterior !== "CERRADO" && estadoBdvAnterior !== "") {
+                    if (estadoBdvAnterior === "ABIERTO" && !silencioso) {
                         registrarEnHistorial("🔴 BDV Cerró intervención");
                         enviarNotificacionTelegram("🔴 *BDV CERRADO*\n\nEl sistema detectó el cierre de la intervención de BDV.");
                     }
@@ -1001,29 +1010,43 @@
                 }
             }
 
-            const esTesoro = textoUpper.includes("TESORO") || textoUpper.includes("BT");
-            if (esTesoro) {
-                const tesoroAbierto = textoUpper.includes("ACTIVO") || textoUpper.includes("ACTIVA") || textoUpper.includes("INTERVENCIÓN");
-                const tesoroCerrado = textoUpper.includes("CERRADA") || textoUpper.includes("FINALIZADA");
-
-                if (tesoroAbierto && !tesoroCerrado) {
+            if (textoUpper.includes("TESORO") || /\bBT\b/.test(textoUpper)) {
+                if (abierto && !cerrado) {
                     statusTesoro.textContent = "ABIERTO";
                     statusTesoro.className = "bank-status-val open";
-                    if (estadoTesoroAnterior !== "ABIERTO") {
+                    if (estadoTesoroAnterior !== "ABIERTO" && !silencioso) {
                         registrarEnHistorial("🟢 TESORO Abrió intervención");
                         dispararAlertaVisualSonora("🚨 ¡TESORO ABIERTO!", textoUltimoMensaje);
                         enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN TESORO ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                        estadoTesoroAnterior = "ABIERTO";
                     }
-                } else if (tesoroCerrado) {
+                    estadoTesoroAnterior = "ABIERTO";
+                } else if (cerrado) {
                     statusTesoro.textContent = "CERRADO";
                     statusTesoro.className = "bank-status-val";
-                    if (estadoTesoroAnterior !== "CERRADO" && estadoTesoroAnterior !== "") {
+                    if (estadoTesoroAnterior === "ABIERTO" && !silencioso) {
                         registrarEnHistorial("🔴 TESORO Cerró intervención");
                         enviarNotificacionTelegram("🔴 *TESORO CERRADO*\n\nEl sistema detectó el cierre de la intervención del Tesoro.");
                     }
                     estadoTesoroAnterior = "CERRADO";
                 }
+            }
+        }
+
+        // Lee el canal público de Telegram (vía /api/canal). La 1.ª lectura solo sincroniza el estado, sin avisar.
+        let ultimoIdCanal = 0, canalSincronizado = false, contadorCanal = 14;
+        async function leerCanalTelegram() {
+            try {
+                const d = await fetch(`${VERCEL_URL}/api/canal`, { cache: 'no-store' }).then(r => r.json());
+                if (!d.ok) throw new Error(d.error || 'sin datos');
+                if (!canalSincronizado) {
+                    d.mensajes.forEach(m => procesarMensajeCanal(m.texto, true));
+                    canalSincronizado = true;
+                } else {
+                    d.mensajes.filter(m => m.id > ultimoIdCanal).forEach(m => procesarMensajeCanal(m.texto, false));
+                }
+                ultimoIdCanal = Math.max(ultimoIdCanal, ...d.mensajes.map(m => m.id));
+            } catch (e) {
+                txtUltimoMensaje.textContent = 'Canal no disponible: ' + e.message;
             }
         }
 
@@ -1078,13 +1101,19 @@
             const gananciaUSDT = TasaP2P > 0 ? (gananciaBs / TasaP2P) : 0;
             const porcentajeGanancia = costoTotalBanco > 0 ? ((gananciaBs / costoTotalBanco) * 100) : 0;
 
-            const pctObjetivoUser = parseFloat(inputPctObjetivo.value) || 5.0;
+            const pctObjetivoUser = parseFloat(inputPctObjetivo.value) || 0; // 0 o vacío = alarma desactivada
             const tasaObjetivoUser = parseFloat(inputTasaObjetivo.value) || 0;
 
-            if (porcentajeGanancia >= pctObjetivoUser) {
+            const datosListos = TasaBCV > 0 && TasaP2P > 0;
+            const detallePrecios = `P2P BDV: Bs ${formatVE(TasaP2P)} | BCV: Bs ${formatVE(TasaBCV)}`;
+
+            if (pctObjetivoUser > 0 && porcentajeGanancia >= pctObjetivoUser) {
                 if (!alertaPctEnviada) {
-                    enviarNotificacionTelegram(`🚀 *¡GANANCIA OBJETIVO ALCANZADA!* 🚀\n\nEl margen subió a *+${porcentajeGanancia.toFixed(2)}%*.\nGanancia estimada: Bs ${formatVE(gananciaBs)}`);
-                    dispararAlertaVisualSonora(`🚨 ¡GANANCIA DEL ${porcentajeGanancia.toFixed(1)}%!`, "Revisa Telegram para comprar.");
+                    // La primera lectura al abrir la página no avisa (solo registra el estado)
+                    if (!primeraEvaluacionAlertas) {
+                        enviarNotificacionTelegram(`🚀 *¡GANANCIA OBJETIVO ALCANZADA!* 🚀\n\nMargen: *+${porcentajeGanancia.toFixed(2)}%* (tu meta: ${pctObjetivoUser}%)\n${detallePrecios}\nGanancia estimada: Bs ${formatVE(gananciaBs)} / ${formatVE(gananciaUSDT)} USDT`);
+                        dispararAlertaVisualSonora(`🚨 ¡GANANCIA DEL ${porcentajeGanancia.toFixed(1)}%!`, detallePrecios);
+                    }
                     alertaPctEnviada = true;
                 }
             } else {
@@ -1093,13 +1122,17 @@
 
             if (tasaObjetivoUser > 0 && TasaP2P >= tasaObjetivoUser) {
                 if (!alertaTasaEnviada) {
-                    enviarNotificacionTelegram(`🎯 *¡TASA OBJETIVO ALCANZADA!* 🎯\n\nEl precio P2P llegó a *Bs ${formatVE(TasaP2P)}* (Tu meta era: Bs ${formatVE(tasaObjetivoUser)}).`);
-                    dispararAlertaVisualSonora(`🎯 ¡TASA P2P EN Bs ${formatVE(TasaP2P)}!`, "Meta alcanzada. ¡Hora de comprar!");
+                    if (!primeraEvaluacionAlertas) {
+                        enviarNotificacionTelegram(`🎯 *¡TASA OBJETIVO ALCANZADA!* 🎯\n\nEl precio P2P llegó a *Bs ${formatVE(TasaP2P)}* (tu meta era: Bs ${formatVE(tasaObjetivoUser)}).\n${detallePrecios}`);
+                        dispararAlertaVisualSonora(`🎯 ¡TASA P2P EN Bs ${formatVE(TasaP2P)}!`, "Meta alcanzada. ¡Hora de comprar!");
+                    }
                     alertaTasaEnviada = true;
                 }
             } else {
                 alertaTasaEnviada = false;
             }
+
+            if (datosListos) primeraEvaluacionAlertas = false;
 
             txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
             txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
@@ -1128,27 +1161,24 @@
             }
         }
 
+        let ultimoBcvTs = 0;
         async function obtenerTasasAPI() {
             const estado = document.getElementById('txt-ultima-hora');
             try {
-                // 1) BCV
-                const resBCV = await fetch(`${VERCEL_URL}/api/bcv`, { cache: 'no-store' });
-                const dataBCV = await resBCV.json();
-                if (!dataBCV.success || !(dataBCV.bcv > 0)) throw new Error('BCV: ' + (dataBCV.error || 'sin dato'));
-                inputBCV.value = dataBCV.bcv.toFixed(2);
+                // 1) BCV (cambia 1 vez al día: se consulta cada 60 s)
+                if (!(parseFloat(inputBCV.value) > 0) || Date.now() - ultimoBcvTs > 60000) {
+                    const dataBCV = await fetch(`${VERCEL_URL}/api/bcv`, { cache: 'no-store' }).then(r => r.json());
+                    if (!dataBCV.success || !(dataBCV.bcv > 0)) throw new Error('BCV: ' + (dataBCV.error || 'sin dato'));
+                    inputBCV.value = dataBCV.bcv.toFixed(2);
+                    ultimoBcvTs = Date.now();
+                    try { localStorage.setItem('global_bcv_rate', dataBCV.bcv); } catch (e) {}
+                }
 
-                // 2) Binance P2P (filtrado por monto en Bs y Banco de Venezuela)
-                const montoUSD = parseFloat(inputMonto.value) || 500;
-                const montoBsFiltro = MONTO_FILTRO_P2P_BS > 0
-                    ? MONTO_FILTRO_P2P_BS
-                    : Math.round(montoUSD * dataBCV.bcv * 1.005);
-
-                const resP2P = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${montoBsFiltro}&pay=${METODO_PAGO_P2P}`, { cache: 'no-store' });
-                const dataP2P = await resP2P.json();
+                // 2) Binance P2P: Banco de Venezuela, 500.000 Bs, primer anuncio (sin patrocinados)
+                const dataP2P = await fetch(`${VERCEL_URL}/api/binance-p2p?amount=${MONTO_FILTRO_P2P_BS}&pay=${METODO_PAGO_P2P}`, { cache: 'no-store' }).then(r => r.json());
                 if (!(dataP2P.precio_binance_p2p > 0)) throw new Error('P2P: ' + (dataP2P.error || 'sin dato'));
                 inputP2P.value = parseFloat(dataP2P.precio_binance_p2p).toFixed(2);
 
-                if (dataP2P.ultimo_mensaje_canal) procesarMensajeCanal(dataP2P.ultimo_mensaje_canal);
                 if (estado) estado.style.color = '';
             } catch (error) {
                 console.error('Error obteniendo tasas:', error);
