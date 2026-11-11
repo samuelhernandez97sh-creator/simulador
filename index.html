@@ -760,14 +760,10 @@
                         <span>📡 Canal Telegram (Monitoreo)</span>
                     </div>
                     
-                    <div class="banks-status-grid">
+                    <div class="banks-status-grid" style="grid-template-columns: 1fr;">
                         <div class="bank-badge-box">
                             <div class="bank-badge-title">BDV</div>
                             <div id="status-bdv" class="bank-status-val">CERRADO</div>
-                        </div>
-                        <div class="bank-badge-box">
-                            <div class="bank-badge-title">TESORO (BT)</div>
-                            <div id="status-tesoro" class="bank-status-val">CERRADO</div>
                         </div>
                     </div>
 
@@ -804,7 +800,6 @@
         let comisionTarjetaSeleccionada = 2.5;
         
         let estadoBdvAnterior = "";
-        let estadoTesoroAnterior = "";
 
         let primeraEvaluacionAlertas = true;
         let alertaPctEnviada = false;
@@ -835,7 +830,6 @@
         const alertFlotante = document.getElementById('alert-flotante');
         
         const statusBdv = document.getElementById('status-bdv');
-        const statusTesoro = document.getElementById('status-tesoro');
         const txtUltimoMensaje = document.getElementById('txt-ultimo-mensaje');
         const logHistorial = document.getElementById('log-historial');
 
@@ -1007,27 +1001,6 @@
                         enviarNotificacionTelegram("🔴 *BDV CERRADO*\n\nEl sistema detectó el cierre de la intervención de BDV.");
                     }
                     estadoBdvAnterior = "CERRADO";
-                }
-            }
-
-            if (textoUpper.includes("TESORO") || /\bBT\b/.test(textoUpper)) {
-                if (abierto && !cerrado) {
-                    statusTesoro.textContent = "ABIERTO";
-                    statusTesoro.className = "bank-status-val open";
-                    if (estadoTesoroAnterior !== "ABIERTO" && !silencioso) {
-                        registrarEnHistorial("🟢 TESORO Abrió intervención");
-                        dispararAlertaVisualSonora("🚨 ¡TESORO ABIERTO!", textoUltimoMensaje);
-                        enviarNotificacionTelegram(`🟢 *¡INTERVENCIÓN TESORO ACTIVA!* 🟢\n\n${textoUltimoMensaje}`);
-                    }
-                    estadoTesoroAnterior = "ABIERTO";
-                } else if (cerrado) {
-                    statusTesoro.textContent = "CERRADO";
-                    statusTesoro.className = "bank-status-val";
-                    if (estadoTesoroAnterior === "ABIERTO" && !silencioso) {
-                        registrarEnHistorial("🔴 TESORO Cerró intervención");
-                        enviarNotificacionTelegram("🔴 *TESORO CERRADO*\n\nEl sistema detectó el cierre de la intervención del Tesoro.");
-                    }
-                    estadoTesoroAnterior = "CERRADO";
                 }
             }
         }
