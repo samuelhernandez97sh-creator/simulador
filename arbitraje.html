@@ -125,19 +125,6 @@
             </div>
         </section>
 
-        <!-- Simulación Comparativa por Banco -->
-        <section>
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-table-cells-large text-blue-500"></i> Simulación Cruzada por Banco (Comisión -0.25% Binance Aplicada)
-                </h3>
-                <span class="text-xs text-slate-400">Live Engine v2.6</span>
-            </div>
-            <div id="p2pCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Inyectado dinámicamente mediante JS -->
-            </div>
-        </section>
-
         <!-- Order Books de BDV y Banesco -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[420px]">
@@ -266,8 +253,8 @@
                 SHARED_BCV_RATE = parseFloat(parentBcv);
             }
 
-            document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(2);
-            document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(2)}`;
+            document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(4);
+            document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(4)}`;
 
             updateP2PCalculations();
             renderP2POrderBooks();
@@ -275,7 +262,7 @@
 
             document.getElementById('p2pRefUsd').addEventListener('input', function() {
                 SHARED_BCV_RATE = parseFloat(this.value) || SHARED_BCV_RATE;
-                document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(2)}`;
+                document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(4)}`;
                 updateP2PCalculations();
             });
         }
@@ -291,8 +278,8 @@
                     SHARED_BCV_RATE = rb.bcv;
                     try { localStorage.setItem('global_bcv_rate', rb.bcv); } catch (e) {}
                 }
-                document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(2);
-                document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(2)}`;
+                document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(4);
+                document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(4)}`;
 
                 const bancos = [['BDV', 'BancoDeVenezuela'], ['Banesco', 'Banesco']];
                 await Promise.all(bancos.map(async ([key, pay]) => {
@@ -325,6 +312,7 @@
         function updateP2PCalculations() {
             const usdRate = SHARED_BCV_RATE;
             const gridContainer = document.getElementById('p2pCardsGrid');
+            if (!gridContainer) return; // simulación cruzada eliminada
             gridContainer.innerHTML = '';
 
             const banksConfig = [
