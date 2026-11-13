@@ -584,7 +584,7 @@
                         <label class="input-label">Tasa BCV Oficial</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">Bs</span>
-                            <input type="number" id="tasa-bcv" class="input-field" step="0.01" value="0.00">
+                            <input type="number" id="tasa-bcv" class="input-field" step="0.0001" value="0.0000">
                         </div>
                     </div>
                     <div class="input-group">
@@ -1064,7 +1064,7 @@
             txtSpreadCruzado.textContent = `${spreadCruzadoVal >= 0 ? '+' : ''}${formatVE(spreadCruzadoVal)}%`;
             txtSpreadCruzado.style.color = spreadCruzadoVal >= 0 ? '#10b981' : '#ef4444';
 
-            const costoTotalBanco = montoUSD * tasaConComision;
+            const costoTotalBanco = Math.round(montoUSD * tasaConComision * 100) / 100; // Bs exactos que debes tener en el banco
             const factorTarjeta = (100 - comisionTarjetaSeleccionada) / 100;
             const montoTarjeta = montoUSD * factorTarjeta;
             const montoUSDT = montoTarjeta * 0.959; 
@@ -1078,7 +1078,7 @@
             const tasaObjetivoUser = parseFloat(inputTasaObjetivo.value) || 0;
 
             const datosListos = TasaBCV > 0 && TasaP2P > 0;
-            const detallePrecios = `P2P BDV: Bs ${formatVE(TasaP2P)} | BCV: Bs ${formatVE(TasaBCV)}`;
+            const detallePrecios = `P2P BDV: Bs ${formatVE(TasaP2P)} | BCV: Bs ${formatVE(TasaBCV, 4)}`;
 
             if (pctObjetivoUser > 0 && porcentajeGanancia >= pctObjetivoUser) {
                 if (!alertaPctEnviada) {
@@ -1107,7 +1107,7 @@
 
             if (datosListos) primeraEvaluacionAlertas = false;
 
-            txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision)} = Bs ${formatVE(costoTotalBanco)}`;
+            txtPaso1.textContent = `$${formatVE(montoUSD)} × Bs ${formatVE(tasaConComision, 4)} = Bs ${formatVE(costoTotalBanco)}`;
             txtPaso2.textContent = `$${formatVE(montoUSD)} → $${formatVE(montoTarjeta)}`;
             txtPaso3.textContent = `$${formatVE(montoTarjeta)} → ${formatVE(montoUSDT)} USDT`;
             txtPaso4.textContent = `${formatVE(montoUSDT)} USDT × Bs ${formatVE(TasaP2P)} = Bs ${formatVE(ventaBolivares)}`;
@@ -1142,7 +1142,7 @@
                 if (!(parseFloat(inputBCV.value) > 0) || Date.now() - ultimoBcvTs > 60000) {
                     const dataBCV = await fetch(`${VERCEL_URL}/api/bcv`, { cache: 'no-store' }).then(r => r.json());
                     if (!dataBCV.success || !(dataBCV.bcv > 0)) throw new Error('BCV: ' + (dataBCV.error || 'sin dato'));
-                    inputBCV.value = dataBCV.bcv.toFixed(2);
+                    inputBCV.value = dataBCV.bcv.toFixed(4); // tasa BCV completa (4 decimales)
                     ultimoBcvTs = Date.now();
                     try { localStorage.setItem('global_bcv_rate', dataBCV.bcv); } catch (e) {}
                 }
