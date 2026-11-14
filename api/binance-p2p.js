@@ -1,7 +1,8 @@
 // api/binance-p2p.js
-// /api/binance-p2p?amount=450000                -> VENDER USDT (tradeType=SELL) con Banco de Venezuela
-// /api/binance-p2p?amount=450000&type=BUY       -> COMPRAR USDT
-// /api/binance-p2p?amount=450000&pay=Banesco    -> otro método de pago
+// /api/binance-p2p?amount=450000                       -> VENDER USDT (tradeType=SELL), Banco de Venezuela
+// /api/binance-p2p?amount=450000&type=BUY              -> COMPRAR USDT
+// /api/binance-p2p?amount=450000&pay=Banesco           -> otro método de pago
+// /api/binance-p2p?pay=Provincial,BBVAProvincial       -> varios identificadores posibles: usa el primero que tenga anuncios
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -10,10 +11,10 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const amount = parseFloat(req.query.amount);
-  const pay = req.query.pay || 'BancoDeVenezuela';
+  const candidatos = String(req.query.pay || 'BancoDeVenezuela').split(',').map(s => s.trim()).filter(Boolean);
   const type = String(req.query.type || 'SELL').toUpperCase() === 'BUY' ? 'BUY' : 'SELL';
 
-  try {
+  const buscar = async (pay) => {
     const r = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
       method: 'POST',
       headers: {
@@ -41,7 +42,7 @@ module.exports = async (req, res) => {
     const esPromo = (a) => Object.entries(a.adv || {}).some(([k, v]) => /promot|sponsor/i.test(k) && v && v !== 'false');
     let ads = j.data.filter(a => !esPromo(a));
 
-    // Solo anuncios que realmente aceptan el método de pago pedido (si hay datos para verificarlo)
+    // Solo anuncios que realmente aceptan el método de pago pedido
     const conMetodo = ads.filter(a => (a.adv.tradeMethods || []).some(m => m.identifier === pay));
     if (conMetodo.length) ads = conMetodo;
 
@@ -54,22 +55,30 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Mejor precio primero (SELL: el más alto; BUY: el más bajo). Evita que un anuncio "promocionado" tape al resto.
+    // Mejor precio primero (SELL: el más alto; BUY: el más bajo)
     ads.sort((a, b) => type === 'SELL'
       ? parseFloat(b.adv.price) - parseFloat(a.adv.price)
       : parseFloat(a.adv.price) - parseFloat(b.adv.price));
 
-    const top = ads.slice(0, 5).map(a => ({
+    return ads.slice(0, 5).map(a => ({
       name: (a.advertiser && a.advertiser.nickName) || '—',
       rate: parseFloat(a.adv.price),
       min: parseFloat(a.adv.minSingleTransAmount),
       max: parseFloat(a.adv.dynamicMaxSingleTransAmount ?? a.adv.maxSingleTransAmount)
     }));
+  };
 
-    if (!top.length) {
-      return res.status(200).json({ precio_binance_p2p: 0, top: [], error: `Sin anuncios ${type} para ${pay} con ${amount || 'cualquier'} Bs` });
+  try {
+    let top = [], usado = candidatos[0];
+    for (const pay of candidatos) {
+      top = await buscar(pay);
+      usado = pay;
+      if (top.length) break;
     }
-    return res.status(200).json({ precio_binance_p2p: top[0].rate, tipo: type, metodo_pago: pay, monto_bs: amount || null, top });
+    if (!top.length) {
+      return res.status(200).json({ precio_binance_p2p: 0, top: [], error: `Sin anuncios ${type} para ${candidatos.join('/')} con ${amount || 'cualquier'} Bs` });
+    }
+    return res.status(200).json({ precio_binance_p2p: top[0].rate, tipo: type, metodo_pago: usado, monto_bs: amount || null, top });
   } catch (e) {
     return res.status(500).json({ precio_binance_p2p: 0, top: [], error: e.message });
   }
