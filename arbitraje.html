@@ -641,7 +641,16 @@
                 const st = $('Status');
                 st.textContent = 'Consultando…';
                 try {
-                    const d = await fetch(`${API_BASE}/api/senales?venta=${Math.round(num('MontoVenta'))}&recompra=${Math.round(num('MontoCompra'))}`, { cache: 'no-store' }).then(r => r.json());
+                    // Acepta el archivo api/senales.js o api/Senales.js (Vercel distingue mayúsculas)
+                    const qs = `venta=${Math.round(num('MontoVenta'))}&recompra=${Math.round(num('MontoCompra'))}`;
+                    let d = null;
+                    for (const nombre of ['senales', 'Senales']) {
+                        try {
+                            const r = await fetch(`${API_BASE}/api/${nombre}?${qs}`, { cache: 'no-store' });
+                            if (r.ok) { d = await r.json(); break; }
+                        } catch (e) { /* prueba el siguiente nombre */ }
+                    }
+                    if (!d) throw new Error('no se encontró api/senales.js en Vercel (revisa que el archivo exista en la carpeta api)');
                     if (!d.ok) throw new Error(d.error || 'sin datos');
                     datos = d;
                     const nErr = Object.keys(d.errores || {}).length;
