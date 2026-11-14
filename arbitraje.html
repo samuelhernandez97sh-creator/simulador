@@ -50,58 +50,8 @@
 
     <main class="max-w-7xl w-full mx-auto space-y-6 flex-grow">
 
-        <!-- ===== VENDE GRANDE, RECOMPRA EN PEQUEÑO ===== -->
-        <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
-            <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-                <div>
-                    <h2 class="text-sm font-bold text-white">Vende grande, recompra en pequeño <span class="text-slate-400 font-normal">· Banco de Venezuela</span></h2>
-                    <p class="text-[11px] text-slate-400">Vendes USDT en el libro (sin patrocinados) y recompras poniendo tu anuncio de compra.</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span id="vgStatus" class="text-[11px] text-slate-400">—</span>
-                    <button onclick="vgActualizar()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold"><i class="fa-solid fa-rotate"></i> Actualizar</button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <!-- Paso 1 -->
-                <div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4">
-                    <div class="text-[10px] uppercase tracking-wider text-red-400 font-bold">1 · Vendes (mejor precio en VENTA)</div>
-                    <div class="text-[11px] text-slate-400 mt-1">Filtro de monto (Bs)</div>
-                    <input id="vgMontoVenta" type="number" value="1000000" class="vg-in w-full mt-1">
-                    <div id="vgPrecioVenta" class="text-3xl font-bold text-red-400 mt-3 font-mono">—</div>
-                    <div class="text-[10px] text-slate-500">Bs por USDT</div>
-                    <div id="vgListaVenta" class="mt-3 space-y-1 text-[11px] text-slate-400"></div>
-                </div>
-                <!-- Paso 2 -->
-                <div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4">
-                    <div class="text-[10px] uppercase tracking-wider text-red-400 font-bold">2 · Recompras (tu anuncio de compra)</div>
-                    <div class="text-[11px] text-slate-400 mt-1">Filtro de monto (Bs)</div>
-                    <input id="vgMontoCompra" type="number" value="20000" class="vg-in w-full mt-1">
-                    <div id="vgPrecioCompra" class="text-3xl font-bold text-amber-400 mt-3 font-mono">—</div>
-                    <div class="text-[10px] text-slate-500">Bs por USDT (mejor anuncio + tu ajuste)</div>
-                    <div id="vgListaCompra" class="mt-3 space-y-1 text-[11px] text-slate-400"></div>
-                </div>
-                <!-- Parámetros -->
-                <div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4 space-y-2">
-                    <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">Parámetros (modificables)</div>
-                    <label class="vg-lb">Tu capital (Bs)<input id="vgCapital" type="number" value="1000000" class="vg-in"></label>
-                    <label class="vg-lb">Ciclos<input id="vgCiclos" type="number" value="1" min="1" class="vg-in"></label>
-                    <label class="vg-lb">Comisión fija al vender (USDT)<input id="vgFeeVenta" type="number" step="0.01" value="0.06" class="vg-in"></label>
-                    <label class="vg-lb">Comisión al recomprar (%)<input id="vgFeeCompra" type="number" step="0.01" value="0.25" class="vg-in"></label>
-                    <label class="vg-lb">Ajuste sobre el mejor anuncio de compra (Bs)<input id="vgAjuste" type="number" step="0.01" value="0" class="vg-in"></label>
-                </div>
-            </div>
-
-            <!-- Resultado -->
-            <div class="mt-4 bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div><div class="vg-k">Te queda por ciclo</div><div id="vgPct" class="text-3xl font-bold font-mono text-emerald-400">—</div></div>
-                <div><div class="vg-k">Ganancia por ciclo</div><div id="vgGanCiclo" class="text-lg font-bold font-mono">—</div></div>
-                <div><div id="vgKTotal" class="vg-k">Ganancia en 1 ciclo</div><div id="vgGanTotal" class="text-lg font-bold font-mono text-emerald-400">—</div></div>
-                <div><div class="vg-k">Recompra por debajo de (equilibrio)</div><div id="vgEq" class="text-lg font-bold font-mono text-amber-400">—</div></div>
-            </div>
-            <div id="vgDetalle" class="mt-3 text-[11px] text-slate-400 leading-relaxed"></div>
-        </section>
+        <div id="vgMod1"></div>
+        <div id="vgMod2"></div>
 
         <style>
             .vg-in { background:#131b2e; border:1px solid #2a3954; border-radius:10px; padding:6px 10px; font-size:13px; font-weight:600; text-align:right; color:#f3f4f6; width:110px; }
@@ -124,29 +74,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- Order Books de BDV y Banesco -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[420px]">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-bold text-emerald-400 flex items-center gap-2 text-xs">
-                        <i class="fa-solid fa-building-columns"></i> Order Book: Banco de Venezuela (BDV)
-                    </h3>
-                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">En Línea</span>
-                </div>
-                <div class="overflow-y-auto flex-grow space-y-2 pr-1 custom-scrollbar" id="p2pBdvOrderBook"></div>
-            </div>
-
-            <div class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl flex flex-col h-[420px]">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-bold text-rose-400 flex items-center gap-2 text-xs">
-                        <i class="fa-solid fa-building-columns"></i> Order Book: Banesco
-                    </h3>
-                    <span class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20">En Línea</span>
-                </div>
-                <div class="overflow-y-auto flex-grow space-y-2 pr-1 custom-scrollbar" id="p2pBanescoOrderBook"></div>
-            </div>
-        </div>
 
         <!-- Bitácora de Operaciones P2P -->
         <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
@@ -281,15 +208,6 @@
                 document.getElementById('p2pRefUsd').value = SHARED_BCV_RATE.toFixed(4);
                 document.getElementById('linkedBcvRate').innerText = `Bs. ${SHARED_BCV_RATE.toFixed(4)}`;
 
-                const bancos = [['BDV', 'BancoDeVenezuela'], ['Banesco', 'Banesco']];
-                await Promise.all(bancos.map(async ([key, pay]) => {
-                    const monto = p2pCardAmounts[key];
-                    const [sell, buy] = await Promise.all(['SELL', 'BUY'].map(t =>
-                        fetch(`${API_BASE}/api/binance-p2p?amount=${monto}&pay=${pay}&type=${t}`, { cache: 'no-store' }).then(r => r.json())
-                    ));
-                    if (sell.top && sell.top.length) p2pCache[key].buyers = sell.top;   // te compran tu USDT
-                    if (buy.top && buy.top.length) p2pCache[key].sellers = buy.top;     // te venden USDT
-                }));
             } catch (e) {
                 console.error('Error de sincronización:', e);
                 document.getElementById('linkedBcvRate').innerText = 'Error API';
@@ -395,51 +313,7 @@
             });
         }
 
-        function renderP2POrderBooks() {
-            renderBankOrderBook('BDV', document.getElementById('p2pBdvOrderBook'));
-            renderBankOrderBook('Banesco', document.getElementById('p2pBanescoOrderBook'));
-        }
-
-        function renderBankOrderBook(bankName, container) {
-            container.innerHTML = '';
-            const data = p2pCache[bankName];
-            let html = `<div class="text-[11px] font-semibold text-slate-400 mb-1">Comerciantes de Compra:</div>`;
-            data.buyers.forEach(b => {
-                const effectiveRate = b.rate * (1 - 0.0025);
-                html += `
-                    <div class="bg-[#0b0f19] p-2.5 rounded-xl border border-[#2a3954] flex justify-between items-center text-xs mb-2">
-                        <div>
-                            <div class="font-bold text-white flex items-center gap-1">
-                                ${b.name} <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded">Compra</span>
-                            </div>
-                            <div class="text-[10px] text-slate-400">Límites: Bs. ${b.min.toLocaleString()} - ${b.max.toLocaleString()}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-emerald-400 font-bold text-sm">Bs. ${effectiveRate.toFixed(2)}</div>
-                            <span class="text-[9px] text-slate-500">Base: ${b.rate.toFixed(2)}</span>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `<div class="text-[11px] font-semibold text-slate-400 mt-3 mb-1">Comerciantes de Venta:</div>`;
-            data.sellers.forEach(s => {
-                html += `
-                    <div class="bg-[#0b0f19] p-2.5 rounded-xl border border-[#2a3954] flex justify-between items-center text-xs mb-2">
-                        <div>
-                            <div class="font-bold text-white flex items-center gap-1">
-                                ${s.name} <span class="text-[9px] bg-rose-500/20 text-rose-400 px-1 rounded">Venta</span>
-                            </div>
-                            <div class="text-[10px] text-slate-400">Límites: Bs. ${s.min.toLocaleString()} - ${s.max.toLocaleString()}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-rose-400 font-bold text-sm">Bs. ${s.rate.toFixed(2)}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
+        function renderP2POrderBooks() {} // order books eliminados
 
         function openP2PModal() { document.getElementById('p2pModal').classList.remove('hidden'); }
         function closeP2PModal() { document.getElementById('p2pModal').classList.add('hidden'); }
@@ -495,73 +369,146 @@
             initP2PModule();
         };
 
-        // ===== Vende grande / Recompra en pequeño =====
-        const VG_PAY = 'BancoDeVenezuela';
-        let vgVenta = null, vgCompra = null;
-        const vgN = (id) => parseFloat(document.getElementById(id).value) || 0;
+        // ===== Vende grande / Recompra en pequeño (módulos reutilizables) =====
+        const VG_BANCOS = {
+            BDV:        { nombre: 'Banco de Venezuela', pay: 'BancoDeVenezuela' },
+            Banesco:    { nombre: 'Banesco',            pay: 'Banesco' },
+            Mercantil:  { nombre: 'Mercantil',          pay: 'Mercantil' },
+            Provincial: { nombre: 'Provincial',         pay: 'Provincial,BBVAProvincial' },
+            PagoMovil:  { nombre: 'Pago Móvil',         pay: 'PagoMovil,Pagomovil' }
+        };
         const vgF = (n, d = 2) => n.toLocaleString('es-VE', { minimumFractionDigits: d, maximumFractionDigits: d });
 
-        function vgLista(el, top) {
-            document.getElementById(el).innerHTML = (top || []).slice(0, 3).map((a, i) =>
-                `<div class="flex justify-between ${i === 0 ? 'text-slate-200' : ''}"><span>${a.name}</span><span class="font-mono">${vgF(a.rate, 3)} <span class="text-slate-500">(${vgF(a.min, 0)}–${vgF(a.max, 0)})</span></span></div>`).join('');
-        }
+        function crearModuloVG(contenedorId, p, bancos, bancoInicial) {
+            const selector = bancos.length > 1;
+            document.getElementById(contenedorId).innerHTML = `
+        <section class="bg-[#131b2e] border border-[#2a3954] rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                <div>
+                    <h2 class="text-sm font-bold text-white">Vende grande, recompra en pequeño
+                        ${selector
+                            ? `<select id="${p}Banco" class="vg-in" style="width:auto;text-align:left;margin-left:6px">${bancos.map(k => `<option value="${k}">${VG_BANCOS[k].nombre}</option>`).join('')}</select>`
+                            : `<span class="text-slate-400 font-normal">· ${VG_BANCOS[bancos[0]].nombre}</span>`}
+                    </h2>
+                    <p class="text-[11px] text-slate-400">Vendes USDT en el libro (sin patrocinados) y recompras poniendo tu anuncio de compra.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="${p}Status" class="text-[11px] text-slate-400">—</span>
+                    <button id="${p}Btn" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4">
+                    <div class="text-[10px] uppercase tracking-wider text-red-400 font-bold">1 · Vendes (mejor precio en VENTA)</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Filtro de monto (Bs)</div>
+                    <input id="${p}MontoVenta" type="number" value="1000000" class="vg-in w-full mt-1">
+                    <div id="${p}PrecioVenta" class="text-3xl font-bold text-red-400 mt-3 font-mono">—</div>
+                    <div class="text-[10px] text-slate-500">Bs por USDT</div>
+                    <div id="${p}ListaVenta" class="mt-3 space-y-1 text-[11px] text-slate-400"></div>
+                </div>
+                <div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4">
+                    <div class="text-[10px] uppercase tracking-wider text-red-400 font-bold">2 · Recompras (tu anuncio de compra)</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Filtro de monto (Bs)</div>
+                    <input id="${p}MontoCompra" type="number" value="20000" class="vg-in w-full mt-1">
+                    <div id="${p}PrecioCompra" class="text-3xl font-bold text-amber-400 mt-3 font-mono">—</div>
+                    <div class="text-[10px] text-slate-500">Bs por USDT (mejor anuncio + tu ajuste)</div>
+                    <div id="${p}ListaCompra" class="mt-3 space-y-1 text-[11px] text-slate-400"></div>
+                </div>
+                <div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4 space-y-2">
+                    <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">Parámetros (modificables)</div>
+                    <label class="vg-lb">Tu capital (Bs)<input id="${p}Capital" type="number" value="1000000" class="vg-in"></label>
+                    <label class="vg-lb">Ciclos<input id="${p}Ciclos" type="number" value="1" min="1" class="vg-in"></label>
+                    <label class="vg-lb">Comisión fija al vender (USDT)<input id="${p}FeeVenta" type="number" step="0.01" value="0.06" class="vg-in"></label>
+                    <label class="vg-lb">Comisión al recomprar (%)<input id="${p}FeeCompra" type="number" step="0.01" value="0.25" class="vg-in"></label>
+                    <label class="vg-lb">Ajuste sobre el mejor anuncio de compra (Bs)<input id="${p}Ajuste" type="number" step="0.01" value="0" class="vg-in"></label>
+                </div>
+            </div>
+            <div class="mt-4 bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div><div class="vg-k">Te queda por ciclo</div><div id="${p}Pct" class="text-3xl font-bold font-mono text-emerald-400">—</div></div>
+                <div><div class="vg-k">Ganancia por ciclo</div><div id="${p}GanCiclo" class="text-lg font-bold font-mono">—</div></div>
+                <div><div id="${p}KTotal" class="vg-k">Ganancia en 1 ciclo</div><div id="${p}GanTotal" class="text-lg font-bold font-mono text-emerald-400">—</div></div>
+                <div><div class="vg-k">Recompra por debajo de (equilibrio)</div><div id="${p}Eq" class="text-lg font-bold font-mono text-amber-400">—</div></div>
+            </div>
+            <div id="${p}Detalle" class="mt-3 text-[11px] text-slate-400 leading-relaxed"></div>
+        </section>`;
 
-        async function vgActualizar() {
-            const st = document.getElementById('vgStatus');
-            st.textContent = 'Consultando…';
-            try {
-                const q = (monto) => fetch(`${API_BASE}/api/binance-p2p?amount=${Math.round(monto)}&pay=${VG_PAY}&type=SELL`, { cache: 'no-store' }).then(r => r.json());
-                const [v, c] = await Promise.all([q(vgN('vgMontoVenta')), q(vgN('vgMontoCompra'))]);
-                if (!(v.precio_binance_p2p > 0)) throw new Error('Venta: ' + (v.error || 'sin anuncios'));
-                if (!(c.precio_binance_p2p > 0)) throw new Error('Compra: ' + (c.error || 'sin anuncios'));
-                vgVenta = v; vgCompra = c;
-                vgLista('vgListaVenta', v.top); vgLista('vgListaCompra', c.top);
-                st.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-VE');
-                st.style.color = '';
-            } catch (e) {
-                st.textContent = 'Error: ' + e.message;
-                st.style.color = '#f87171';
+            const $ = (id) => document.getElementById(p + id);
+            const num = (id) => parseFloat($(id).value) || 0;
+            let venta = null, compra = null;
+            const banco = () => VG_BANCOS[selector ? $('Banco').value : bancos[0]];
+
+            const lista = (id, top) => { $(id).innerHTML = (top || []).slice(0, 3).map((a, i) =>
+                `<div class="flex justify-between ${i === 0 ? 'text-slate-200' : ''}"><span>${a.name}</span><span class="font-mono">${vgF(a.rate, 3)} <span class="text-slate-500">(${vgF(a.min, 0)}–${vgF(a.max, 0)})</span></span></div>`).join(''); };
+
+            function calcular() {
+                if (!venta || !compra) return;
+                const Ps = venta.precio_binance_p2p;
+                const Pb = compra.precio_binance_p2p + num('Ajuste');
+                const C = num('Capital'), ciclos = Math.max(1, num('Ciclos'));
+                const feeV = num('FeeVenta'), feeC = num('FeeCompra') / 100;
+                if (!(C > 0) || !(Ps > 0) || !(Pb > 0)) return;
+
+                const u0 = C / Ps;                       // USDT que vendes
+                const bs = C - feeV * Ps;                // Bs recibidos tras la comisión fija
+                const usdtBack = bs / Pb;                // USDT que recompras
+                const usdtNeto = usdtBack * (1 - feeC);  // tras la comisión del anuncio
+                const ganUsdt = usdtNeto - u0;
+                const pct = ganUsdt / u0 * 100;
+                const ganBs = ganUsdt * Pb;
+                const eq = Ps * (bs / C) * (1 - feeC);
+
+                $('PrecioVenta').textContent = vgF(Ps, 3);
+                $('PrecioCompra').textContent = vgF(Pb, 3);
+                const pe = $('Pct');
+                pe.textContent = (pct >= 0 ? '+' : '') + vgF(pct) + ' %';
+                pe.className = 'text-3xl font-bold font-mono ' + (pct >= 0 ? 'text-emerald-400' : 'text-red-400');
+                $('GanCiclo').textContent = `${vgF(ganBs, 0)} Bs · ${vgF(ganUsdt)} USDT`;
+                $('KTotal').textContent = `Ganancia en ${ciclos} ciclo${ciclos > 1 ? 's' : ''}`;
+                const gt = $('GanTotal');
+                gt.textContent = `${vgF(ganBs * ciclos, 0)} Bs · ${vgF(ganUsdt * ciclos)} USDT`;
+                gt.className = 'text-lg font-bold font-mono ' + (ganUsdt >= 0 ? 'text-emerald-400' : 'text-red-400');
+                $('Eq').textContent = vgF(eq, 3);
+                $('Detalle').innerHTML =
+                    `Vendes ≈ <b>${vgF(u0)} USDT</b> a ${vgF(Ps, 3)} → recibes ${vgF(bs, 0)} Bs (comisión ${vgF(feeV * Ps, 0)} Bs). ` +
+                    `Recompras a ${vgF(Pb, 3)} → ${vgF(usdtBack)} USDT, menos ${num('FeeCompra')}% (${vgF(usdtBack * feeC)} USDT) = <b>${vgF(usdtNeto)} USDT</b>. ` +
+                    `Los ciclos se suman sin reinvertir (mismo capital en cada uno).`;
             }
-            vgCalcular();
+
+            async function actualizar() {
+                const st = $('Status');
+                st.textContent = 'Consultando…';
+                const pay = banco().pay;
+                try {
+                    const q = (monto) => fetch(`${API_BASE}/api/binance-p2p?amount=${Math.round(monto)}&pay=${pay}&type=SELL`, { cache: 'no-store' }).then(r => r.json());
+                    const [v, c] = await Promise.all([q(num('MontoVenta')), q(num('MontoCompra'))]);
+                    if (!(v.precio_binance_p2p > 0)) throw new Error('Venta: ' + (v.error || 'sin anuncios'));
+                    if (!(c.precio_binance_p2p > 0)) throw new Error('Compra: ' + (c.error || 'sin anuncios'));
+                    venta = v; compra = c;
+                    lista('ListaVenta', v.top); lista('ListaCompra', c.top);
+                    st.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-VE');
+                    st.style.color = '';
+                } catch (e) {
+                    venta = compra = null;
+                    ['PrecioVenta', 'PrecioCompra', 'Pct', 'GanCiclo', 'GanTotal', 'Eq'].forEach(id => $(id).textContent = '—');
+                    $('ListaVenta').innerHTML = $('ListaCompra').innerHTML = '';
+                    st.textContent = 'Error: ' + e.message;
+                    st.style.color = '#f87171';
+                }
+                calcular();
+            }
+
+            ['Capital', 'Ciclos', 'FeeVenta', 'FeeCompra', 'Ajuste'].forEach(id => $(id).addEventListener('input', calcular));
+            ['MontoVenta', 'MontoCompra'].forEach(id => $(id).addEventListener('change', actualizar));
+            if (selector) { $('Banco').value = bancoInicial; $('Banco').addEventListener('change', actualizar); }
+            $('Btn').addEventListener('click', actualizar);
+            actualizar();
+            setInterval(actualizar, 10000);
         }
 
-        function vgCalcular() {
-            if (!vgVenta || !vgCompra) return;
-            const Ps = vgVenta.precio_binance_p2p;
-            const Pb = vgCompra.precio_binance_p2p + vgN('vgAjuste');   // precio al que queda tu anuncio de compra
-            const C = vgN('vgCapital'), ciclos = Math.max(1, vgN('vgCiclos'));
-            const feeV = vgN('vgFeeVenta'), feeC = vgN('vgFeeCompra') / 100;
-            if (!(C > 0) || !(Ps > 0) || !(Pb > 0)) return;
-
-            const u0 = C / Ps;                       // USDT que vendes (capital expresado a precio de venta)
-            const bs = C - feeV * Ps;                // Bs recibidos tras la comisión fija
-            const usdtBack = bs / Pb;                // USDT que recompras
-            const usdtNeto = usdtBack * (1 - feeC);  // tras la comisión del anuncio
-            const ganUsdt = usdtNeto - u0;
-            const pct = ganUsdt / u0 * 100;
-            const ganBs = ganUsdt * Pb;
-            const eq = Ps * (bs / C) * (1 - feeC);   // recompra por debajo de esto = ganancia
-
-            document.getElementById('vgPrecioVenta').textContent = vgF(Ps, 3);
-            document.getElementById('vgPrecioCompra').textContent = vgF(Pb, 3);
-            const pe = document.getElementById('vgPct');
-            pe.textContent = (pct >= 0 ? '+' : '') + vgF(pct) + ' %';
-            pe.className = 'text-3xl font-bold font-mono ' + (pct >= 0 ? 'text-emerald-400' : 'text-red-400');
-            document.getElementById('vgGanCiclo').textContent = `${vgF(ganBs, 0)} Bs · ${vgF(ganUsdt)} USDT`;
-            document.getElementById('vgKTotal').textContent = `Ganancia en ${ciclos} ciclo${ciclos > 1 ? 's' : ''}`;
-            const gt = document.getElementById('vgGanTotal');
-            gt.textContent = `${vgF(ganBs * ciclos, 0)} Bs · ${vgF(ganUsdt * ciclos)} USDT`;
-            gt.className = 'text-lg font-bold font-mono ' + (ganUsdt >= 0 ? 'text-emerald-400' : 'text-red-400');
-            document.getElementById('vgEq').textContent = vgF(eq, 3);
-            document.getElementById('vgDetalle').innerHTML =
-                `Vendes ≈ <b>${vgF(u0)} USDT</b> a ${vgF(Ps, 3)} → recibes ${vgF(bs, 0)} Bs (comisión ${vgF(feeV * Ps, 0)} Bs). ` +
-                `Recompras a ${vgF(Pb, 3)} → ${vgF(usdtBack)} USDT, menos ${vgN('vgFeeCompra')}% (${vgF(usdtBack * feeC)} USDT) = <b>${vgF(usdtNeto)} USDT</b>. ` +
-                `Los ciclos se suman sin reinvertir (mismo capital en cada uno).`;
-        }
-
-        ['vgCapital', 'vgCiclos', 'vgFeeVenta', 'vgFeeCompra', 'vgAjuste'].forEach(id => document.getElementById(id).addEventListener('input', vgCalcular));
-        ['vgMontoVenta', 'vgMontoCompra'].forEach(id => document.getElementById(id).addEventListener('change', vgActualizar));
-        window.addEventListener('load', () => { vgActualizar(); setInterval(vgActualizar, 10000); });
+        window.addEventListener('load', () => {
+            crearModuloVG('vgMod1', 'vgA', ['BDV'], 'BDV');
+            crearModuloVG('vgMod2', 'vgB', ['Banesco', 'Mercantil', 'Provincial', 'PagoMovil'], 'Banesco');
+        });
     </script>
 </body>
 </html>
