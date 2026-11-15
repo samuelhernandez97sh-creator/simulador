@@ -381,6 +381,36 @@
         };
         const vgF = (n, d = 2) => n.toLocaleString('es-VE', { minimumFractionDigits: d, maximumFractionDigits: d });
 
+        // ===== Datos compartidos: UNA consulta cada 10 s sirve a los dos módulos y a las señales =====
+        const INTERVALO_SEG = 10;
+        const SN_CACHE = {};
+        function getSenales(venta, recompra) {
+            const k = Math.round(venta) + '|' + Math.round(recompra), c = SN_CACHE[k];
+            if (c && Date.now() - c.ts < 6000) return c.p;      // misma consulta en curso o reciente: se reutiliza
+            const p = (async () => {
+                const qs = `venta=${Math.round(venta)}&recompra=${Math.round(recompra)}`;
+                for (const nombre of ['senales', 'Senales']) {   // Vercel distingue mayúsculas
+                    try {
+                        const r = await fetch(`${API_BASE}/api/${nombre}?${qs}`, { cache: 'no-store' });
+                        if (r.ok) { const d = await r.json(); if (d.ok) return d; }
+                    } catch (e) { /* prueba el siguiente nombre */ }
+                }
+                throw new Error('no se pudo leer /api/senales (revisa que api/senales.js exista en el repo)');
+            })();
+            SN_CACHE[k] = { ts: Date.now(), p };
+            p.catch(() => { delete SN_CACHE[k]; });
+            return p;
+        }
+        // Reloj en un Worker: sigue a 10 s aunque la pestaña esté oculta (los timers normales se frenan)
+        const TICKS = [];
+        function iniciarReloj() {
+            const correr = () => TICKS.forEach(f => f());
+            try {
+                const w = new Worker(URL.createObjectURL(new Blob([`setInterval(() => postMessage(1), ${INTERVALO_SEG * 1000});`], { type: 'text/javascript' })));
+                w.onmessage = correr;
+            } catch (e) { setInterval(correr, INTERVALO_SEG * 1000); }
+        }
+
         function crearModuloVG(contenedorId, p, bancos, bancoInicial) {
             const selector = bancos.length > 1;
             document.getElementById(contenedorId).innerHTML = `
@@ -483,12 +513,13 @@
             async function actualizar() {
                 const st = $('Status');
                 st.textContent = 'Consultando…';
-                const pay = banco().pay;
                 try {
-                    const q = (monto) => fetch(`${API_BASE}/api/binance-p2p?amount=${Math.round(monto)}&pay=${pay}&type=SELL`, { cache: 'no-store' }).then(r => r.json());
-                    const [v, c] = await Promise.all([q(num('MontoVenta')), q(num('MontoCompra'))]);
-                    if (!(v.precio_binance_p2p > 0)) throw new Error('Venta: ' + (v.error || 'sin anuncios'));
-                    if (!(c.precio_binance_p2p > 0)) throw new Error('Compra: ' + (c.error || 'sin anuncios'));
+                    const d = await getSenales(num('MontoVenta'), num('MontoCompra'));
+                    const m = d.metodos[selector ? $('Banco').value : bancos[0]] || {};
+                    const v = { precio_binance_p2p: m.venta ? m.venta.precio : 0, top: m.venta ? m.venta.top : [] };
+                    const c = { precio_binance_p2p: m.recompra ? m.recompra.precio : 0, top: m.recompra ? m.recompra.top : [] };
+                    if (!(v.precio_binance_p2p > 0)) throw new Error('Venta: sin anuncios para ese monto');
+                    if (!(c.precio_binance_p2p > 0)) throw new Error('Compra: sin anuncios para ese monto');
                     venta = v; compra = c;
                     lista('ListaVenta', v.top); lista('ListaCompra', c.top);
                     st.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-VE');
@@ -508,7 +539,7 @@
             if (selector) { $('Banco').value = bancoInicial; $('Banco').addEventListener('change', actualizar); }
             $('Btn').addEventListener('click', actualizar);
             actualizar();
-            setInterval(actualizar, 10000);
+            TICKS.push(actualizar);
         }
 
 
@@ -653,17 +684,7 @@
                 const st = $('Status');
                 st.textContent = 'Consultando…';
                 try {
-                    // Acepta el archivo api/senales.js o api/Senales.js (Vercel distingue mayúsculas)
-                    const qs = `venta=${Math.round(num('MontoVenta'))}&recompra=${Math.round(num('MontoCompra'))}`;
-                    let d = null;
-                    for (const nombre of ['senales', 'Senales']) {
-                        try {
-                            const r = await fetch(`${API_BASE}/api/${nombre}?${qs}`, { cache: 'no-store' });
-                            if (r.ok) { d = await r.json(); break; }
-                        } catch (e) { /* prueba el siguiente nombre */ }
-                    }
-                    if (!d) throw new Error('no se encontró api/senales.js en Vercel (revisa que el archivo exista en la carpeta api)');
-                    if (!d.ok) throw new Error(d.error || 'sin datos');
+                    const d = await getSenales(num('MontoVenta'), num('MontoCompra'));
                     datos = d;
                     const nErr = Object.keys(d.errores || {}).length;
                     st.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-VE') + (nErr ? ` · ${nErr} consulta(s) fallaron` : '');
@@ -680,13 +701,14 @@
             ['MontoVenta', 'MontoCompra'].forEach(id => $(id).addEventListener('change', actualizar));
             $('Btn').addEventListener('click', actualizar);
             actualizar();
-            setInterval(actualizar, 15000);
+            TICKS.push(actualizar);
         }
 
         window.addEventListener('load', () => {
             crearModuloVG('vgMod1', 'vgA', ['BDV'], 'BDV');
             crearModuloVG('vgMod2', 'vgB', ['Banesco', 'Mercantil', 'Provincial', 'PagoMovil'], 'Banesco');
             crearSenales();
+            iniciarReloj();
         });
     </script>
 </body>
