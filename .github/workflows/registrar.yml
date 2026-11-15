@@ -2,7 +2,7 @@ name: Registrar precios
 
 on:
   schedule:
-    - cron: '*/10 * * * *'   # cada 10 minutos (GitHub puede retrasarla unos minutos)
+    - cron: '3,13,23,33,43,53 * * * *'   # cada 10 minutos, en minutos menos congestionados (GitHub puede retrasarla)
   workflow_dispatch:          # permite correrla a mano desde la pestaña Actions
 
 permissions:
@@ -65,8 +65,10 @@ jobs:
 
       - name: Guardar en la rama datos
         run: |
-          if [ -n "$(git status --porcelain historial.jsonl 2>/dev/null)" ]; then
-            git add historial.jsonl
+          # Evita que Vercel despliegue cada commit de esta rama (límite de 100 despliegues al día)
+          echo '{"git":{"deploymentEnabled":false}}' > vercel.json
+          if [ -n "$(git status --porcelain)" ]; then
+            git add historial.jsonl vercel.json 2>/dev/null || git add vercel.json
             git commit -m "datos $(date -u '+%Y-%m-%d %H:%M')"
             git push origin datos
           fi
