@@ -1,0 +1,59 @@
+name: Registrar precios
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # cada 10 minutos (GitHub puede retrasarla unos minutos)
+  workflow_dispatch:          # permite correrla a mano desde la pestaña Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: registrar
+  cancel-in-progress: false
+
+jobs:
+  registrar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preparar la rama datos
+        run: |
+          git config user.name "registrador"
+          git config user.email "registrador@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin datos >/dev/null 2>&1; then
+            git checkout datos
+          else
+            git checkout --orphan datos
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+      - name: Consultar precios y guardar una línea
+        run: |
+          BASE="https://simulador-lemon-one.vercel.app"
+          S=$(curl -sS --max-time 45 "$BASE/api/senales?venta=1000000&recompra=20000" || echo '{}')
+          B=$(curl -sS --max-time 20 "$BASE/api/bcv" || echo '{}')
+          S="$S" B="$B" node -e '
+            let s, b;
+            try { s = JSON.parse(process.env.S); b = JSON.parse(process.env.B || "{}"); } catch (e) { process.exit(0); }
+            if (!s.ok) process.exit(0);
+            const r = { t: new Date().toISOString().slice(0, 16) + "Z", v: {}, r: {} };
+            if (b.bcv) r.bcv = b.bcv;
+            for (const [k, m] of Object.entries(s.metodos || {})) {
+              if (m.venta && m.venta.precio > 0) r.v[k] = m.venta.precio;
+              if (m.recompra && m.recompra.precio > 0) r.r[k] = m.recompra.precio;
+            }
+            if (!Object.keys(r.v).length && !Object.keys(r.r).length) process.exit(0);
+            require("fs").appendFileSync("historial.jsonl", JSON.stringify(r) + "\n");
+          '
+
+      - name: Guardar en la rama datos
+        run: |
+          if [ -n "$(git status --porcelain historial.jsonl 2>/dev/null)" ]; then
+            git add historial.jsonl
+            git commit -m "datos $(date -u '+%Y-%m-%d %H:%M')"
+            git push origin datos
+          fi
