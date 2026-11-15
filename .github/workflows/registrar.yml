@@ -45,14 +45,21 @@ jobs:
             let s, b;
             try { s = JSON.parse(process.env.S); b = JSON.parse(process.env.B || "{}"); } catch (e) { s = {}; b = {}; }
             if (!s.ok) { console.log("::warning::No se pudo leer /api/senales (revisa que el archivo api/senales.js exista en el repo)"); process.exit(0); }
-            const r = { t: new Date().toISOString().slice(0, 16) + "Z", v: {}, r: {} };
+            // Etiqueta el registro con su casilla de 10 min (12:00, 12:10, 12:20...) aunque GitHub se retrase unos minutos
+            const ahora = new Date();
+            const casilla = new Date(Math.floor(ahora.getTime() / 600000) * 600000);
+            const r = { t: casilla.toISOString().slice(0, 16) + "Z", x: ahora.toISOString().slice(0, 16) + "Z", v: {}, r: {} };
             if (b.bcv) r.bcv = b.bcv;
             for (const [k, m] of Object.entries(s.metodos || {})) {
               if (m.venta && m.venta.precio > 0) r.v[k] = m.venta.precio;
               if (m.recompra && m.recompra.precio > 0) r.r[k] = m.recompra.precio;
             }
             if (!Object.keys(r.v).length && !Object.keys(r.r).length) { console.log("::warning::Binance no devolvió precios en este momento"); process.exit(0); }
-            require("fs").appendFileSync("historial.jsonl", JSON.stringify(r) + "\n");
+            const fs = require("fs");
+            let lineas = fs.existsSync("historial.jsonl") ? fs.readFileSync("historial.jsonl", "utf8").split("\n").filter(Boolean) : [];
+            try { if (lineas.length && JSON.parse(lineas[lineas.length - 1]).t === r.t) lineas.pop(); } catch (e) {}  // una sola lectura por casilla
+            lineas.push(JSON.stringify(r));
+            fs.writeFileSync("historial.jsonl", lineas.join("\n") + "\n");
             console.log("Registro guardado: " + JSON.stringify(r));
           '
 
