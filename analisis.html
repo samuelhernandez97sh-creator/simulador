@@ -50,6 +50,7 @@
     </section>
 
     <div id="aviso"></div>
+    <section id="ahora"></section>
     <section id="resumen" class="grid grid-cols-2 md:grid-cols-4 gap-3"></section>
 
     <section class="card"><div class="k mb-2">Ganancia neta por ciclo · promedio por hora</div><div style="position:relative;height:240px"><canvas id="cHora"></canvas></div></section>
@@ -65,6 +66,11 @@
         <div id="tend" class="mt-3 text-xs space-y-2"></div>
     </section>
 
+    <section class="card">
+        <div class="k mb-2">Qué es "Mejor de las 4 señales" y qué bancos fueron</div>
+        <p class="text-[11px] text-slate-400 mb-3">No es un banco. En cada registro se prueban las 4 señales de la pestaña Arbitraje (1.ª venta × 1.ª recompra, 1.ª × 2.ª, 2.ª × 1.ª y 2.ª × 2.ª), con sus comisiones de traslado o Pago Móvil, y se toma la que más ganancia deja. Por eso arriba ves un solo porcentaje; esta tabla dice qué combinación de bancos fue la mejor y cuántas veces.</p>
+        <div id="ranking"></div>
+    </section>
     <section class="card"><div class="k mb-2">Combinación ganadora por franja (mejor de las 4 señales)</div><div id="combos"></div></section>
 </div>
 
@@ -142,10 +148,12 @@ function episodios(pts) {
         const pos = x.pct >= 0;
         if (cur && cur.pos === pos && x.ts - cur.last <= 25 * 60000) {
             cur.last = x.ts; cur.pk = pos ? Math.max(cur.pk, x.pct) : Math.min(cur.pk, x.pct);
-        } else { if (cur) out.push(cur); cur = { pos, first: x.ts, last: x.ts, pk: x.pct }; }
+        } else { if (cur) out.push(cur); cur = { pos, first: x.ts, last: x.ts, pk: x.pct, c: {} }; }
+        const k = NOM[x.S] + ' → ' + NOM[x.R];
+        cur.c[k] = (cur.c[k] || 0) + 1;
     }
     if (cur) out.push(cur);
-    out.forEach(e => e.min = (e.last - e.first) / 60000 + 10);
+    out.forEach(e => { e.min = (e.last - e.first) / 60000 + 10; e.combo = Object.keys(e.c).sort((a, b) => e.c[b] - e.c[a])[0]; });
     return out;
 }
 function devPrecio(pts) {
@@ -197,6 +205,11 @@ function render() {
     $('info').textContent = `${REG.length} registros · ${new Date(ini).toLocaleDateString('es-VE')} → ${new Date(fin).toLocaleString('es-VE')} (${F(dias, 1)} días)`;
     $('aviso').innerHTML = dias < 3 ? `<div class="card text-sm text-amber-300">Hay menos de 3 días de datos: los patrones todavía no son confiables. Mientras más días acumule, más fiable será.</div>` : '';
 
+    const ult = REG[REG.length - 1], eu = evaluar(ult, 'MEJOR', p);
+    $('ahora').innerHTML = eu ? `<div class="card flex flex-wrap items-center gap-x-6 gap-y-1">
+        <div><div class="k">Última lectura · ${new Date(Date.parse(ult.t)).toLocaleString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</div>
+        <div class="text-sm">Mejor señal en ese momento: vender por <b>${NOM[eu.S]}</b> a ${F(ult.v[eu.S], 3)} y recomprar por <b>${NOM[eu.R]}</b> a ${F(ult.r[eu.R] + p.ajuste, 3)}</div></div>
+        <div class="v ${col(eu.pct)}">${eu.pct >= 0 ? '+' : ''}${F(eu.pct)} %</div></div>` : '';
     const pts = preparar(REG, serie, p, f);
     if (!pts.length) { $('resumen').innerHTML = '<div class="card col-span-4 text-sm text-slate-400">Sin datos para ese filtro.</div>'; return; }
     const hs = porHora(pts), mejor = franja(hs, 2, true), peor = franja(hs, 2, false);
@@ -205,9 +218,10 @@ function render() {
     const avg = (a) => a.length ? a.reduce((s, e) => s + e.min, 0) / a.length : 0;
     const nDias = new Set(pts.map(x => x.day)).size;
 
+    const comboEn = (fr) => { if (!fr) return ''; const c = {}; pts.filter(x => x.h >= fr.h && x.h < fr.h + 2).forEach(x => { const k = NOM[x.S] + ' → ' + NOM[x.R]; c[k] = (c[k] || 0) + 1; }); const t = Object.keys(c).sort((a, b) => c[b] - c[a])[0]; return t ? ' · ' + t : ''; };
     $('resumen').innerHTML = [
-        ['Mejor franja (2 h)', mejor ? `${hh(mejor.h)}–${hh(mejor.h + 2)}` : '—', mejor ? `${mejor.v >= 0 ? '+' : ''}${F(mejor.v)} % promedio` : '', mejor ? col(mejor.v) : ''],
-        ['Peor franja (2 h)', peor ? `${hh(peor.h)}–${hh(peor.h + 2)}` : '—', peor ? `${peor.v >= 0 ? '+' : ''}${F(peor.v)} % promedio` : '', peor ? col(peor.v) : ''],
+        ['Mejor franja (2 h)', mejor ? `${hh(mejor.h)}–${hh(mejor.h + 2)}` : '—', mejor ? `${mejor.v >= 0 ? '+' : ''}${F(mejor.v)} % promedio${comboEn(mejor)}` : '', mejor ? col(mejor.v) : ''],
+        ['Peor franja (2 h)', peor ? `${hh(peor.h)}–${hh(peor.h + 2)}` : '—', peor ? `${peor.v >= 0 ? '+' : ''}${F(peor.v)} % promedio${comboEn(peor)}` : '', peor ? col(peor.v) : ''],
         ['Tiempo con ganancia', F(pos, 0) + ' %', `${F(ep.length / nDias, 1)} ventanas por día`, pos >= 50 ? 'text-emerald-400' : 'text-amber-400'],
         ['Duración promedio', `${dur(avg(ep))} gana`, `${dur(avg(en))} pierde`, '']
     ].map(([k, v, s, c]) => `<div class="card"><div class="k">${k}</div><div class="v ${c}">${v}</div><div class="text-[11px] text-slate-400">${s}</div></div>`).join('');
@@ -218,13 +232,13 @@ function render() {
         type: 'bar',
         data: { labels: hs.map((_, i) => String(i)), datasets: [{ data: hs.map(o => o.avg), backgroundColor: hs.map(o => (o.avg ?? 0) >= 0 ? '#2a78d6' : '#e34948'), borderRadius: 3, maxBarThickness: 22 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: (c) => hh(+c[0].label), label: (c) => `${F(c.parsed.y)} % · positivo ${F(hs[c.dataIndex].pos * 100, 0)} % (${hs[c.dataIndex].n} registros)` } } },
-            scales: { x: { grid: { display: false }, ticks: { color: tick, autoSkip: false, font: { size: 11 } } }, y: { grid: { color: grid }, ticks: { color: tick, callback: (v) => F(v, 1) + ' %', font: { size: 11 } } } } }
+            scales: { x: { grid: { display: false }, ticks: { color: tick, autoSkip: false, font: { size: 11 } } }, y: { grid: { color: grid }, ticks: { color: tick, callback: (v) => F(v, 2) + ' %', font: { size: 11 } } } } }
     });
 
-    const fila = (e) => `<tr><td>${new Date(e.first).toLocaleString('es-VE', { timeZone: 'America/Caracas', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td class="${e.pos ? 'text-emerald-400' : 'text-red-400'}">${e.pos ? 'Ganancia' : 'Pérdida'}</td><td>${dur(e.min)}</td><td class="font-mono ${col(e.pk)}">${F(e.pk)} %</td></tr>`;
+    const fila = (e) => `<tr><td>${new Date(e.first).toLocaleString('es-VE', { timeZone: 'America/Caracas', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td class="${e.pos ? 'text-emerald-400' : 'text-red-400'}">${e.pos ? 'Ganancia' : 'Pérdida'}</td><td>${dur(e.min)}</td><td class="font-mono ${col(e.pk)}">${F(e.pk)} %</td><td>${e.combo}</td></tr>`;
     const larga = (a) => a.length ? dur(Math.max(...a.map(e => e.min))) : '—';
     $('ventanas').innerHTML = `<div class="text-[11px] text-slate-400 mb-2">Más larga con ganancia: <b class="text-emerald-400">${larga(ep)}</b> · más larga con pérdida: <b class="text-red-400">${larga(en)}</b></div>
-        <table><thead><tr><th>Inicio</th><th></th><th>Duró</th><th>Pico</th></tr></thead><tbody>${eps.slice(-10).reverse().map(fila).join('')}</tbody></table>`;
+        <table><thead><tr><th>Inicio</th><th></th><th>Duró</th><th>Pico</th><th>Combinación</th></tr></thead><tbody>${eps.slice(-10).reverse().map(fila).join('')}</tbody></table>`;
 
     $('series').innerHTML = `<table><thead><tr><th>Serie</th><th>Promedio</th><th>% del tiempo ≥ 0</th><th>Mejor 2 h</th></tr></thead><tbody>` +
         Object.keys(SERIES).map(s => {
@@ -247,7 +261,11 @@ function render() {
     $('tend').innerHTML = `<div><span class="k mr-2">Tendencia</span>${tend.filter(s => s.l !== 'Estable').map(chip).join('') || '<span class="text-slate-500">sin cambios claros</span>'}</div>
         <div><span class="k mr-2">Nivel</span>${nivel.map(chip).join('')}</div>`;
 
-    const mp = preparar(REG, 'MEJOR', p, f), bl = Array.from({ length: 8 }, () => ({ c: {}, s: 0, n: 0, p: {} }));
+    const mp = preparar(REG, 'MEJOR', p, f), rk = {};
+    mp.forEach(x => { const k = NOM[x.S] + ' → ' + NOM[x.R]; const o = rk[k] = rk[k] || { n: 0, s: 0, pos: 0 }; o.n++; o.s += x.pct; if (x.pct >= 0) o.pos++; });
+    $('ranking').innerHTML = `<table><thead><tr><th>Vender por → recomprar por</th><th>Veces que fue la mejor</th><th>Ganancia promedio</th><th>Con ganancia</th></tr></thead><tbody>` +
+        Object.keys(rk).sort((a, b) => rk[b].n - rk[a].n).slice(0, 8).map(k => { const o = rk[k]; return `<tr><td>${k}</td><td>${F(o.n / mp.length * 100, 0)} % (${o.n})</td><td class="font-mono ${col(o.s / o.n)}">${F(o.s / o.n)} %</td><td>${F(o.pos / o.n * 100, 0)} %</td></tr>`; }).join('') + '</tbody></table>';
+    const bl = Array.from({ length: 8 }, () => ({ c: {}, s: 0, n: 0, p: {} }));
     mp.forEach(x => { const b = bl[Math.floor(x.h / 3)], k = `${NOM[x.S]} → ${NOM[x.R]}`; b.c[k] = (b.c[k] || 0) + 1; b.p[k] = (b.p[k] || 0) + x.pct; b.s += x.pct; b.n++; });
     $('combos').innerHTML = `<table><thead><tr><th>Franja</th><th>Vender → recomprar</th><th>Veces ganadora</th><th>Ganancia con esa combinación</th><th>Promedio de la mejor señal</th></tr></thead><tbody>` +
         bl.map((b, i) => { if (!b.n) return `<tr><td>${hh(i * 3)}–${hh(i * 3 + 3)}</td><td colspan="4" class="text-slate-500">sin datos</td></tr>`;
