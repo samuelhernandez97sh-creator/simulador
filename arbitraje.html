@@ -615,13 +615,22 @@
                 });
                 const mejor = Math.max(...res.filter(x => !x.vacio).map(x => x.c.pct), -Infinity);
 
+                // Señal 5: prueba TODAS las combinaciones (cualquier método de venta × cualquier método de recompra)
+                const todas = [];
+                vendedores.forEach(S => recompradores.forEach(R => {
+                    const Ps = M[S].venta.precio, Pb = M[R].recompra.precio + prm.ajuste;
+                    todas.push({ S, R, Ps, Pb, c: snCalcular(prm, S, R, Ps, Pb) });
+                }));
+                todas.sort((a, b) => b.c.pct - a.c.pct);
+                if (todas.length) res.push({ ...todas[0], titulo: 'Mejor de TODAS las combinaciones', global: true, lista: todas.slice(0, 6) });
+
                 $('Cards').innerHTML = res.map((x, n) => {
                     if (x.vacio) return `<div class="bg-[#0b0f19] border border-[#2a3954] rounded-xl p-4 text-xs text-slate-500">Señal ${n + 1} · ${x.titulo}<br>Sin datos suficientes.</div>`;
-                    const c = x.c, ok = c.pct >= 0, top = c.pct === mejor;
-                    return `<div class="bg-[#0b0f19] border ${top ? 'border-emerald-500/60' : 'border-[#2a3954]'} rounded-xl p-4">
+                    const c = x.c, ok = c.pct >= 0, top = x.global ? true : c.pct === mejor;
+                    return `<div class="bg-[#0b0f19] border ${top ? 'border-emerald-500/60' : 'border-[#2a3954]'} rounded-xl p-4 ${x.global ? 'lg:col-span-2' : ''}">
                         <div class="flex justify-between items-center mb-2">
                             <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">Señal ${n + 1} · ${x.titulo}</div>
-                            ${top ? '<span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">MEJOR</span>' : ''}
+                            ${top ? `<span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">${x.global ? 'MEJOR DE TODAS' : 'MEJOR DE LAS 4'}</span>` : ''}
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400">
                             <div>Vendes por <b class="text-slate-200">${VG_BANCOS[x.S].nombre}</b><div class="font-mono text-red-400 text-lg font-bold">${vgF(x.Ps, 3)}</div></div>
@@ -634,6 +643,8 @@
                             <div><div class="vg-k">${prm.ciclos} ciclo${prm.ciclos > 1 ? 's' : ''}</div><div class="text-xs font-bold font-mono ${ok ? 'text-emerald-400' : 'text-red-400'}">${vgF(c.ganBs * prm.ciclos, 0)} Bs<br>${vgF(c.ganUsdt * prm.ciclos)} USDT</div></div>
                         </div>
                         <div class="text-[11px] text-slate-400 mt-2">Equilibrio: recompra por debajo de <b class="text-amber-400 font-mono">${vgF(c.eq, 3)}</b></div>
+                        ${x.global ? `<div class="text-[11px] mt-3 ${ok ? 'text-emerald-300' : 'text-amber-300'}">${ok ? 'Es la combinación con más ganancia ahora mismo.' : 'Ninguna combinación deja ganancia en este momento.'}</div>
+                        <table class="w-full text-[11px] mt-2"><thead><tr class="text-slate-500 text-left"><th class="py-1">Mejores combinaciones</th><th>Vende</th><th>Recompra</th><th>Comisión</th><th class="text-right">Por ciclo</th></tr></thead><tbody>${x.lista.map(y => `<tr class="border-t border-[#2a3954]/60"><td class="py-1">${VG_BANCOS[y.S].nombre} → ${VG_BANCOS[y.R].nombre}</td><td class="font-mono">${vgF(y.Ps, 3)}</td><td class="font-mono">${vgF(y.Pb, 3)}</td><td>${y.c.mov.pct > 0 ? vgF(y.c.mov.pct) + ' %' : '—'}</td><td class="text-right font-mono ${y.c.pct >= 0 ? 'text-emerald-400' : 'text-red-400'}">${y.c.pct >= 0 ? '+' : ''}${vgF(y.c.pct)} %</td></tr>`).join('')}</tbody></table>` : ''}
                     </div>`;
                 }).join('');
             }
