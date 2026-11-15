@@ -2,5 +2,8 @@
   "functions": {
     "api/*.js": { "maxDuration": 15 }
   },
-  "regions": ["gru1"]
+  "regions": ["gru1"],
+  "git": {
+    "deploymentEnabled": { "datos": false }
+  }
 }
