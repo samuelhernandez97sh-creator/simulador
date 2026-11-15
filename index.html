@@ -789,6 +789,7 @@
         const VERCEL_URL = 'https://simulador-lemon-one.vercel.app';
         // Monto en Bs para filtrar Binance P2P (0 = usar el costo calculado del monto base USD)
         const MONTO_FILTRO_P2P_BS = 500000;
+        const INTERVALO_P2P_SEG = 10; // cada cuántos segundos se actualizan las tasas (el reloj corre en un Worker, también con la pestaña oculta)
         const METODO_PAGO_P2P = 'BancoDeVenezuela';
         let tvChart = null;
         let tvCandleSeries = null;
@@ -969,7 +970,7 @@
                 if (contadorCanal >= 15) { contadorCanal = 0; leerCanalTelegram(); }
 
                 contadorSegundosAPI++;
-                if (contadorSegundosAPI >= 5) {
+                if (contadorSegundosAPI >= INTERVALO_P2P_SEG) {
                     contadorSegundosAPI = 0;
                     obtenerTasasAPI();
                 }
