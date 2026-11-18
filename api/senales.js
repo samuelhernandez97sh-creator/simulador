@@ -1,5 +1,6 @@
 // api/senales.js — consulta Binance P2P (pestaña Venta, sin patrocinados) para TODOS tus métodos de pago de una vez
 // /api/senales?venta=1000000&recompra=20000
+const { opciones, filtrar } = require('./_filtros');
 const METODOS = {
   BDV:       ['BancoDeVenezuela'],
   Banesco:   ['Banesco'],
@@ -8,7 +9,7 @@ const METODOS = {
   PagoMovil: ['PagoMovil']
 };
 
-async function buscar(pay, amount) {
+async function buscar(pay, amount, o) {
   const r = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
     method: 'POST',
     headers: {
@@ -40,12 +41,14 @@ async function buscar(pay, amount) {
     return amount >= min && amount <= max;
   });
   ads.sort((a, b) => parseFloat(b.adv.price) - parseFloat(a.adv.price));
-  return ads.slice(0, 5).map(a => ({
+  const f = filtrar(ads, 'SELL', o);                      // quita anuncios poco fiables o de "vitrina"
+  const top = f.ads.slice(0, 5).map(a => ({
     name: (a.advertiser && a.advertiser.nickName) || '—',
     rate: parseFloat(a.adv.price),
     min: parseFloat(a.adv.minSingleTransAmount),
     max: parseFloat(a.adv.dynamicMaxSingleTransAmount ?? a.adv.maxSingleTransAmount)
   }));
+  return { top, excluidos: f.excluidos.slice(0, 4) };
 }
 
 module.exports = async (req, res) => {
@@ -56,21 +59,22 @@ module.exports = async (req, res) => {
 
   const venta = parseFloat(req.query.venta) || 1000000;
   const recompra = parseFloat(req.query.recompra) || 20000;
+  const o = opciones(req.query);
   const metodos = {}, errores = {};
 
   await Promise.all(Object.entries(METODOS).flatMap(([clave, candidatos]) =>
     [['venta', venta], ['recompra', recompra]].map(async ([tipo, monto]) => {
       metodos[clave] = metodos[clave] || {};
       try {
-        let top = [];
-        for (const c of candidatos) { top = await buscar(c, monto); if (top.length) break; }
-        metodos[clave][tipo] = { precio: top[0] ? top[0].rate : 0, top };
+        let r = { top: [], excluidos: [] };
+        for (const c of candidatos) { r = await buscar(c, monto, o); if (r.top.length) break; }
+        metodos[clave][tipo] = { precio: r.top[0] ? r.top[0].rate : 0, top: r.top, excluidos: r.excluidos };
       } catch (e) {
         errores[`${clave}:${tipo}`] = e.message;
-        metodos[clave][tipo] = { precio: 0, top: [] };
+        metodos[clave][tipo] = { precio: 0, top: [], excluidos: [] };
       }
     })
   ));
 
-  return res.status(200).json({ ok: true, venta, recompra, metodos, errores });
+  return res.status(200).json({ ok: true, venta, recompra, filtros: o, metodos, errores });
 };
