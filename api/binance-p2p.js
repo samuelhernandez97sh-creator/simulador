@@ -3,6 +3,8 @@
 // /api/binance-p2p?amount=450000&type=BUY              -> COMPRAR USDT
 // /api/binance-p2p?amount=450000&pay=Banesco           -> otro método de pago
 // /api/binance-p2p?pay=Provincial,BBVAProvincial       -> varios identificadores posibles: usa el primero que tenga anuncios
+const { opciones, filtrar } = require('./_filtros');
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -13,7 +15,9 @@ module.exports = async (req, res) => {
   const amount = parseFloat(req.query.amount);
   const candidatos = String(req.query.pay || 'BancoDeVenezuela').split(',').map(s => s.trim()).filter(Boolean);
   const type = String(req.query.type || 'SELL').toUpperCase() === 'BUY' ? 'BUY' : 'SELL';
+  const o = opciones(req.query);
 
+  let excluidos = [];
   const buscar = async (pay) => {
     const r = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
       method: 'POST',
@@ -60,7 +64,9 @@ module.exports = async (req, res) => {
       ? parseFloat(b.adv.price) - parseFloat(a.adv.price)
       : parseFloat(a.adv.price) - parseFloat(b.adv.price));
 
-    return ads.slice(0, 5).map(a => ({
+    const f = filtrar(ads, type, o);   // quita anuncios poco fiables o de "vitrina"
+    excluidos = f.excluidos.slice(0, 4);
+    return f.ads.slice(0, 5).map(a => ({
       name: (a.advertiser && a.advertiser.nickName) || '—',
       rate: parseFloat(a.adv.price),
       min: parseFloat(a.adv.minSingleTransAmount),
@@ -78,7 +84,7 @@ module.exports = async (req, res) => {
     if (!top.length) {
       return res.status(200).json({ precio_binance_p2p: 0, top: [], error: `Sin anuncios ${type} para ${candidatos.join('/')} con ${amount || 'cualquier'} Bs` });
     }
-    return res.status(200).json({ precio_binance_p2p: top[0].rate, tipo: type, metodo_pago: usado, monto_bs: amount || null, top });
+    return res.status(200).json({ precio_binance_p2p: top[0].rate, tipo: type, metodo_pago: usado, monto_bs: amount || null, top, excluidos });
   } catch (e) {
     return res.status(500).json({ precio_binance_p2p: 0, top: [], error: e.message });
   }
