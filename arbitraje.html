@@ -384,7 +384,7 @@
         // ===== Datos compartidos: UNA consulta cada 10 s sirve a los dos módulos y a las señales =====
         const INTERVALO_SEG = 10;
         const SN_CACHE = {};
-        const FILTROS = { minfinish: 95, minorders: 100, gap: 0.3 };   // filtros anti-manipulación (se editan en Señales)
+        const FILTROS = { minfinish: 90, minorders: 50, gap: 0.8 };   // filtros anti-manipulación (se editan en Señales)
         function getSenales(venta, recompra) {
             const k = Math.round(venta) + '|' + Math.round(recompra) + '|' + FILTROS.minfinish + '|' + FILTROS.minorders + '|' + FILTROS.gap, c = SN_CACHE[k];
             if (c && Date.now() - c.ts < 6000) return c.p;      // misma consulta en curso o reciente: se reutiliza
