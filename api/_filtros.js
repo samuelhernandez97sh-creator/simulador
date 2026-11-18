@@ -5,9 +5,9 @@ const num = (v) => { const x = parseFloat(v); return Number.isFinite(x) ? x : nu
 function opciones(q = {}) {
   const n = (v, d) => { const x = parseFloat(v); return Number.isFinite(x) ? x : d; };
   return {
-    minFinish: n(q.minfinish, 90) / 100,   // tasa de completado mínima de los últimos 30 días (95 %)
+    minFinish: n(q.minfinish, 90) / 100,   // tasa de completado mínima de los últimos 30 días (90 %)
     minOrders: n(q.minorders, 50),        // órdenes mínimas en 30 días
-    gap: n(q.gap, 0.8) / 100               // salto máximo del 1.er anuncio respecto al siguiente (0,3 %)
+    gap: n(q.gap, 0.8) / 100               // salto máximo del 1.er anuncio respecto al siguiente (0,8 %)
   };
 }
 
