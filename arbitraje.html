@@ -599,9 +599,9 @@
                 <label class="vg-lb flex-col !items-start">Comisión recompra (%)${inp('FeeCompra', 0.25, '0.01')}</label>
                 <label class="vg-lb flex-col !items-start">Pago Móvil (%)${inp('FeePM', 0.30, '0.01')}</label>
                 <label class="vg-lb flex-col !items-start">Traslado entre bancos (%)${inp('FeeTr', 0.30, '0.01')}</label>
-                <label class="vg-lb flex-col !items-start" title="Ignora anuncios con menos de este % de órdenes completadas en 30 días">Completado mín. (%)${inp('MinFinish', 95, '0.5')}</label>
-                <label class="vg-lb flex-col !items-start" title="Ignora anuncios con menos órdenes en 30 días">Órdenes mín. (30 días)${inp('MinOrders', 100)}</label>
-                <label class="vg-lb flex-col !items-start" title="Ignora el 1.er anuncio si su precio está más de este % por encima del siguiente">Salto máx. vs siguiente (%)${inp('Gap', 0.3, '0.05')}</label>
+                <label class="vg-lb flex-col !items-start" title="Ignora anuncios con menos de este % de órdenes completadas en 30 días">Completado mín. (%)${inp('MinFinish', 90, '0.5')}</label>
+                <label class="vg-lb flex-col !items-start" title="Ignora anuncios con menos órdenes en 30 días">Órdenes mín. (30 días)${inp('MinOrders', 50)}</label>
+                <label class="vg-lb flex-col !items-start" title="Ignora el 1.er anuncio si su precio está más de este % por encima del siguiente">Salto máx. vs siguiente (%)${inp('Gap', 0.8, '0.05')}</label>
                 <label class="vg-lb flex-col !items-start">Banco de tu Pago Móvil
                     <select id="snBancoPM" class="vg-in" style="width:110px;text-align:left">${['BDV', 'Banesco', 'Mercantil', 'Provincial'].map(k => `<option value="${k}">${VG_BANCOS[k].nombre}</option>`).join('')}</select>
                 </label>
