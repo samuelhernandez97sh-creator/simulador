@@ -384,11 +384,12 @@
         // ===== Datos compartidos: UNA consulta cada 10 s sirve a los dos módulos y a las señales =====
         const INTERVALO_SEG = 10;
         const SN_CACHE = {};
+        const FILTROS = { minfinish: 95, minorders: 100, gap: 0.3 };   // filtros anti-manipulación (se editan en Señales)
         function getSenales(venta, recompra) {
-            const k = Math.round(venta) + '|' + Math.round(recompra), c = SN_CACHE[k];
+            const k = Math.round(venta) + '|' + Math.round(recompra) + '|' + FILTROS.minfinish + '|' + FILTROS.minorders + '|' + FILTROS.gap, c = SN_CACHE[k];
             if (c && Date.now() - c.ts < 6000) return c.p;      // misma consulta en curso o reciente: se reutiliza
             const p = (async () => {
-                const qs = `venta=${Math.round(venta)}&recompra=${Math.round(recompra)}`;
+                const qs = `venta=${Math.round(venta)}&recompra=${Math.round(recompra)}&minfinish=${FILTROS.minfinish}&minorders=${FILTROS.minorders}&gap=${FILTROS.gap}`;
                 for (const nombre of ['senales', 'Senales']) {   // Vercel distingue mayúsculas
                     try {
                         const r = await fetch(`${API_BASE}/api/${nombre}?${qs}`, { cache: 'no-store' });
@@ -598,12 +599,16 @@
                 <label class="vg-lb flex-col !items-start">Comisión recompra (%)${inp('FeeCompra', 0.25, '0.01')}</label>
                 <label class="vg-lb flex-col !items-start">Pago Móvil (%)${inp('FeePM', 0.30, '0.01')}</label>
                 <label class="vg-lb flex-col !items-start">Traslado entre bancos (%)${inp('FeeTr', 0.30, '0.01')}</label>
+                <label class="vg-lb flex-col !items-start" title="Ignora anuncios con menos de este % de órdenes completadas en 30 días">Completado mín. (%)${inp('MinFinish', 95, '0.5')}</label>
+                <label class="vg-lb flex-col !items-start" title="Ignora anuncios con menos órdenes en 30 días">Órdenes mín. (30 días)${inp('MinOrders', 100)}</label>
+                <label class="vg-lb flex-col !items-start" title="Ignora el 1.er anuncio si su precio está más de este % por encima del siguiente">Salto máx. vs siguiente (%)${inp('Gap', 0.3, '0.05')}</label>
                 <label class="vg-lb flex-col !items-start">Banco de tu Pago Móvil
                     <select id="snBancoPM" class="vg-in" style="width:110px;text-align:left">${['BDV', 'Banesco', 'Mercantil', 'Provincial'].map(k => `<option value="${k}">${VG_BANCOS[k].nombre}</option>`).join('')}</select>
                 </label>
             </div>
 
             <div id="snTabla" class="mt-4 overflow-x-auto"></div>
+            <div id="snExcl" class="mt-2 text-[11px] text-amber-300"></div>
             <div id="snCards" class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
         </section>`;
 
@@ -636,6 +641,13 @@
                             <td class="font-mono">${v && v.precio ? `${vgF(v.precio, 3)} <span class="text-slate-500">${v.top[0].name}</span> ${rv(k) <= 2 ? `<span class="text-emerald-400">#${rv(k)}</span>` : ''}` : '—'}</td>
                             <td class="font-mono">${r && r.precio ? `${vgF(r.precio + prm.ajuste, 3)} <span class="text-slate-500">${r.top[0].name}</span> ${rr(k) <= 2 ? `<span class="text-emerald-400">#${rr(k)}</span>` : ''}` : '—'}</td></tr>`;
                     }).join('') + '</tbody></table>';
+
+                const ign = [], vistos = new Set();
+                SN_ORDEN.forEach(k => ['venta', 'recompra'].forEach(t => ((M[k] && M[k][t] && M[k][t].excluidos) || []).forEach(e => {
+                    const id = `${k}${t}${e.name}${e.rate}`; if (vistos.has(id)) return; vistos.add(id);
+                    ign.push(`${VG_BANCOS[k].nombre} (${t === 'venta' ? 'vende' : 'recompra'}): <b>${e.name}</b> a ${vgF(e.rate, 3)} · ${e.motivo}`);
+                })));
+                $('Excl').innerHTML = ign.length ? `<i class="fa-solid fa-shield-halved"></i> Ignorados por poca fiabilidad o posible manipulación: ${ign.slice(0, 6).join(' &nbsp;|&nbsp; ')}` : '';
 
                 const combos = [[0, 0, '1.ª venta × 1.ª recompra'], [0, 1, '1.ª venta × 2.ª recompra'], [1, 0, '2.ª venta × 1.ª recompra'], [1, 1, '2.ª venta × 2.ª recompra']];
                 const res = combos.map(([i, j, titulo]) => {
@@ -698,6 +710,10 @@
 
             ['Capital', 'Ciclos', 'Ajuste', 'FeeVenta', 'FeeCompra', 'FeePM', 'FeeTr'].forEach(id => $(id).addEventListener('input', render));
             $('BancoPM').addEventListener('change', render);
+            ['MinFinish', 'MinOrders', 'Gap'].forEach(id => $(id).addEventListener('change', () => {
+                FILTROS.minfinish = num('MinFinish'); FILTROS.minorders = num('MinOrders'); FILTROS.gap = num('Gap');
+                actualizar();
+            }));
             ['MontoVenta', 'MontoCompra'].forEach(id => $(id).addEventListener('change', actualizar));
             $('Btn').addEventListener('click', actualizar);
             actualizar();
